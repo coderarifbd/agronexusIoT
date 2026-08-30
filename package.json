@@ -1,12 +1,25 @@
 {
   "name": "agronexus-iot",
   "version": "1.0.0",
-  "description": "AgroNexus IoT - Telemetry, Device Control & Automation Platform",
+  "type": "module",
+  "description": "AgroNexus IoT - Enterprise Telemetry, Device Control & Automation Platform",
   "scripts": {
     "start": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd server && npm run dev",
     "client": "cd client && npm run dev",
+    "build": "cd client && npm install && npm run build",
     "install:all": "npm install && cd server && npm install && cd ../client && npm install"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mathjs": "^14.0.1",
+    "pg": "^8.13.3",
+    "uuid": "^11.0.5",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

@@ -1,9 +1,13 @@
+import { api } from "./api";
+
 class SocketClient {
   constructor() {
     this.ws = null;
     this.listeners = new Map();
     this.reconnectTimer = null;
     this.subscribedChannels = new Set();
+    this.pollingInterval = null;
+    this.isPollingActive = false;
   }
 
   connect() {
@@ -13,15 +17,14 @@ class SocketClient {
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = window.location.host;
-    // In dev mode when vite is at port 3000, proxy handles /ws or fallback directly to port 5050
     const wsUrl = `${protocol}//${host}/ws`;
 
     try {
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
-        console.log("🟢 WebSocket Connected to AgroNexus Live Stream");
-        // Re-subscribe to channels
+        console.log("?? WebSocket Connected to AgroNexus Stream");
+        this.stopPollingFallback();
         for (const chId of this.subscribedChannels) {
           this.send({ action: "SUBSCRIBE", channelId: chId });
         }
@@ -37,24 +40,53 @@ class SocketClient {
       };
 
       this.ws.onclose = () => {
-        console.log("🔴 WebSocket Disconnected. Reconnecting in 3s...");
+        this.startPollingFallback();
         this.scheduleReconnect();
       };
 
       this.ws.onerror = (err) => {
-        console.error("WS Error:", err);
+        this.startPollingFallback();
       };
     } catch (err) {
-      console.error("WS Connection Init Error:", err);
+      this.startPollingFallback();
       this.scheduleReconnect();
     }
+  }
+
+  startPollingFallback() {
+    if (this.isPollingActive) return;
+    this.isPollingActive = true;
+    console.log("? Vercel/Serverless Mode: Real-time Telemetry Polling fallback active (3s)");
+
+    if (this.pollingInterval) clearInterval(this.pollingInterval);
+    this.pollingInterval = setInterval(async () => {
+      for (const channelId of this.subscribedChannels) {
+        if (!channelId || channelId === "*") continue;
+        try {
+          const res = await api.getChannel(channelId);
+          if (res && res.currentValues) {
+            this.emit("TELEMETRY_UPDATE", {
+              type: "TELEMETRY_UPDATE",
+              channelId,
+              data: res.currentValues,
+              timestamp: res.lastUpdate || new Date().toISOString()
+            });
+          }
+        } catch (e) {}
+      }
+    }, 3500);
+  }
+
+  stopPollingFallback() {
+    if (this.pollingInterval) clearInterval(this.pollingInterval);
+    this.isPollingActive = false;
   }
 
   scheduleReconnect() {
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.reconnectTimer = setTimeout(() => {
       this.connect();
-    }, 3000);
+    }, 10000);
   }
 
   send(data) {
