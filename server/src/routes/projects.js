@@ -69,7 +69,7 @@ router.get("/:id", authenticateToken, async (req, res) => {
     ORDER BY c.channel_number ASC, c.created_at ASC
   `, [project.id]);
 
-  const members = await db.all("SELECT * FROM project_members WHERE project_id = $1", [project.id]);
+  const members = await db.all("SELECT * FROM project_members WHERE project_id = $1 ORDER BY created_at ASC", [project.id]);
 
   res.json({ project, channels, members });
 });
@@ -101,19 +101,30 @@ router.post("/:id/members", authenticateToken, async (req, res) => {
     return res.status(400).json({ error: "Member email and role (Owner, Admin, Editor, Viewer) required." });
   }
 
-  const memberId = uuidv4();
-  await db.run(`
-    INSERT INTO project_members (id, project_id, user_email, role)
-    VALUES ($1, $2, $3, $4)
-  `, [memberId, req.params.id, email, role]);
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanRole = role.trim();
 
-  const members = await db.all("SELECT * FROM project_members WHERE project_id = $1", [req.params.id]);
-  res.status(201).json({ message: `Added ${email} as ${role}`, members });
+  // Check if member already exists in project
+  const existing = await db.get("SELECT id FROM project_members WHERE project_id = $1 AND LOWER(user_email) = $2", [req.params.id, cleanEmail]);
+
+  if (existing) {
+    await db.run("UPDATE project_members SET role = $1 WHERE id = $2", [cleanRole, existing.id]);
+  } else {
+    const memberId = uuidv4();
+    await db.run(`
+      INSERT INTO project_members (id, project_id, user_email, role)
+      VALUES ($1, $2, $3, $4)
+    `, [memberId, req.params.id, cleanEmail, cleanRole]);
+  }
+
+  const members = await db.all("SELECT * FROM project_members WHERE project_id = $1 ORDER BY created_at ASC", [req.params.id]);
+  res.status(201).json({ message: `Added ${cleanEmail} as ${cleanRole}`, members });
 });
 
 router.delete("/:id/members/:memberId", authenticateToken, async (req, res) => {
   await db.run("DELETE FROM project_members WHERE id = $1 AND project_id = $2", [req.params.memberId, req.params.id]);
-  res.json({ message: "Member removed." });
+  const members = await db.all("SELECT * FROM project_members WHERE project_id = $1 ORDER BY created_at ASC", [req.params.id]);
+  res.json({ message: "Member removed.", members });
 });
 
 export default router;

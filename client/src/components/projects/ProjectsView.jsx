@@ -15,7 +15,9 @@ import {
   Layers,
   ChevronRight,
   ExternalLink,
-  Users
+  Users,
+  CheckCircle,
+  AlertCircle
 } from "lucide-react";
 
 export function ProjectsView() {
@@ -37,10 +39,13 @@ export function ProjectsView() {
   const [channelDesc, setChannelDesc] = useState("");
   const [isPublic, setIsPublic] = useState(false);
 
-  // Team Share Form
+  // Team Share Form & State
   const [shareEmail, setShareEmail] = useState("");
-  const [shareRole, setShareRole] = useState("Editor");
+  const [shareRole, setShareRole] = useState("Viewer");
   const [members, setMembers] = useState([]);
+  const [memberLoading, setMemberLoading] = useState(false);
+  const [memberError, setMemberError] = useState("");
+  const [memberSuccess, setMemberSuccess] = useState("");
 
   useEffect(() => {
     if (activeProject?.id) {
@@ -51,10 +56,25 @@ export function ProjectsView() {
   async function loadProjectChannels(pId) {
     try {
       const res = await api.getProject(pId);
-      setChannels(res.channels);
+      setChannels(res.channels || []);
       setMembers(res.members || []);
     } catch (e) {
       console.error(e);
+    }
+  }
+
+  async function handleOpenTeamModal() {
+    setShowTeamModal(true);
+    setMemberError("");
+    setMemberSuccess("");
+    const targetProjId = activeProject?.id || projects[0]?.id;
+    if (targetProjId) {
+      try {
+        const res = await api.getProject(targetProjId);
+        setMembers(res.members || []);
+      } catch (e) {
+        console.error(e);
+      }
     }
   }
 
@@ -102,25 +122,53 @@ export function ProjectsView() {
   }
 
   async function handleAddMember(e) {
-    e.preventDefault();
-    if (!shareEmail || !activeProject?.id) return;
+    if (e && e.preventDefault) e.preventDefault();
+    setMemberError("");
+    setMemberSuccess("");
+
+    const targetProject = activeProject || projects[0];
+    if (!targetProject?.id) {
+      setMemberError("Please select an active project first.");
+      return;
+    }
+
+    if (!shareEmail.trim()) {
+      setMemberError("Please enter a valid member email address.");
+      return;
+    }
+
     try {
-      const res = await api.addProjectMember(activeProject.id, { email: shareEmail, role: shareRole });
-      setMembers(res.members);
+      setMemberLoading(true);
+      const res = await api.addProjectMember(targetProject.id, {
+        email: shareEmail.trim(),
+        role: shareRole
+      });
+      setMembers(res.members || []);
+      setMemberSuccess(`Successfully added ${shareEmail.trim()} as ${shareRole}`);
       setShareEmail("");
+      setTimeout(() => setMemberSuccess(""), 4000);
+    } catch (err) {
+      console.error("Add member error:", err);
+      setMemberError(err.message || "Failed to add member to project.");
+    } finally {
+      setMemberLoading(false);
+    }
+  }
+
+  async function handleRemoveMember(memberId) {
+    const targetProject = activeProject || projects[0];
+    if (!targetProject?.id) return;
+    try {
+      const res = await api.removeProjectMember(targetProject.id, memberId);
+      setMembers(res.members || []);
+      setMemberSuccess("Team member access revoked.");
+      setTimeout(() => setMemberSuccess(""), 3000);
     } catch (e) {
       console.error(e);
     }
   }
 
-  async function handleRemoveMember(memberId) {
-    try {
-      await api.removeProjectMember(activeProject.id, memberId);
-      setMembers(prev => prev.filter(m => m.id !== memberId));
-    } catch (e) {
-      console.error(e);
-    }
-  }
+  const currentProjectName = activeProject?.name || projects[0]?.name || "Project";
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 animate-fadeIn">
@@ -138,8 +186,8 @@ export function ProjectsView() {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setShowTeamModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition-colors"
+            onClick={handleOpenTeamModal}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition-colors shadow-sm"
           >
             <Users className="w-4 h-4 text-emerald-400" />
             <span>Team Access</span>
@@ -244,7 +292,7 @@ export function ProjectsView() {
                     </div>
                     <div className="text-xs font-mono text-slate-400 mt-1 flex flex-wrap items-center gap-2">
                       <span>API Write Key: <code className="text-emerald-400 font-semibold">{ch.api_write_key}</code></span>
-                      <span className="text-slate-700">•</span>
+                      <span className="text-slate-700">?</span>
                       <span>{ch.field_count || 0} Dynamic Sensor Fields</span>
                     </div>
                   </div>
@@ -334,7 +382,7 @@ export function ProjectsView() {
       {showCreateChannel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
           <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-4">Create Channel in {activeProject.name}</h3>
+            <h3 className="text-lg font-bold text-white mb-4">Create Channel in {activeProject?.name || "Project"}</h3>
             <form onSubmit={handleCreateChannel} className="space-y-4">
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Channel Name</label>
@@ -392,13 +440,27 @@ export function ProjectsView() {
       {showTeamModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
           <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+            <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
               <Users className="w-5 h-5 text-emerald-400" />
               Team Sharing & RBAC Permissions
             </h3>
             <p className="text-xs text-slate-400 mb-4">
-              Manage team member roles (Owner, Admin, Editor, Viewer) for {activeProject?.name}.
+              Manage team member roles (Owner, Admin, Editor, Viewer) for <strong className="text-emerald-400">{currentProjectName}</strong>.
             </p>
+
+            {memberSuccess && (
+              <div className="p-3 mb-3 bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs rounded-xl flex items-center gap-2 animate-fadeIn">
+                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{memberSuccess}</span>
+              </div>
+            )}
+
+            {memberError && (
+              <div className="p-3 mb-3 bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs rounded-xl flex items-center gap-2 animate-fadeIn">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>{memberError}</span>
+              </div>
+            )}
 
             {/* Add Member Form */}
             <form onSubmit={handleAddMember} className="flex gap-2 mb-4">
@@ -407,42 +469,48 @@ export function ProjectsView() {
                 value={shareEmail}
                 onChange={(e) => setShareEmail(e.target.value)}
                 placeholder="colleague@domain.com"
-                className="flex-1 bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                className="flex-1 bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none"
                 required
               />
               <select
                 value={shareRole}
                 onChange={(e) => setShareRole(e.target.value)}
-                className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none cursor-pointer"
               >
-                <option value="Admin">Admin</option>
-                <option value="Editor">Editor</option>
                 <option value="Viewer">Viewer</option>
+                <option value="Editor">Editor</option>
+                <option value="Admin">Admin</option>
+                <option value="Owner">Owner</option>
               </select>
               <button
                 type="submit"
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl"
+                disabled={memberLoading}
+                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-950/30 flex items-center gap-1 shrink-0 disabled:opacity-50"
               >
-                Add
+                {memberLoading ? "Adding..." : "Add"}
               </button>
             </form>
 
             {/* Members List */}
-            <div className="space-y-2 max-h-48 overflow-y-auto mb-4">
+            <div className="space-y-2 max-h-56 overflow-y-auto mb-4 pr-1">
               {members.length === 0 && (
-                <div className="text-xs text-slate-500 text-center py-4">No team members added yet.</div>
+                <div className="text-xs text-slate-500 text-center py-6">
+                  No team members added yet. Enter an email above to invite colleagues.
+                </div>
               )}
               {members.map((m) => (
-                <div key={m.id} className="flex items-center justify-between p-2.5 bg-slate-950 rounded-xl border border-slate-800 text-xs">
-                  <div>
+                <div key={m.id} className="flex items-center justify-between p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
                     <span className="font-semibold text-white">{m.user_email}</span>
-                    <span className="ml-2 text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-500/30">
+                    <span className="ml-2 text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30 font-bold">
                       {m.role}
                     </span>
                   </div>
                   <button
                     onClick={() => handleRemoveMember(m.id)}
-                    className="text-slate-500 hover:text-rose-400"
+                    title="Revoke member access"
+                    className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg hover:bg-slate-900 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -452,7 +520,7 @@ export function ProjectsView() {
 
             <button
               onClick={() => setShowTeamModal(false)}
-              className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl"
+              className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-colors"
             >
               Done
             </button>
