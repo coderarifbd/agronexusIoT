@@ -1,7 +1,8 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
-import { Cpu, Wifi, Battery, MapPin } from "lucide-react";
+import { useTheme } from "../../context/ThemeContext";
+import { MapPin } from "lucide-react";
 
 // Fix standard Leaflet default icon bug in React
 const customIcon = (isOnline) =>
@@ -27,30 +28,35 @@ const customIcon = (isOnline) =>
   });
 
 export function MapWidget({ devices = [] }) {
+  const { isDark } = useTheme();
   const defaultCenter = [23.8103, 90.4125];
 
+  const tileUrl = isDark
+    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+
   return (
-    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col h-full overflow-hidden">
+    <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex flex-col h-full overflow-hidden shadow-sm dark:shadow-md transition-colors">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-emerald-400" />
-          <h4 className="text-sm font-bold text-white tracking-tight">IoT Devices Fleet Map</h4>
+          <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">IoT Devices Fleet Map</h4>
         </div>
-        <span className="text-[11px] text-slate-400 font-mono">
+        <span className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">
           {devices.length} Microcontrollers Deployed
         </span>
       </div>
 
-      <div className="flex-1 w-full min-h-[260px] rounded-xl overflow-hidden border border-slate-800 relative z-10">
+      <div className="flex-1 w-full min-h-[260px] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 relative z-10">
         <MapContainer
           center={defaultCenter}
           zoom={13}
           scrollWheelZoom={false}
-          style={{ height: "100%", width: "100%", background: "#0b0f19" }}
+          style={{ height: "100%", width: "100%", background: isDark ? "#0b0f19" : "#f8fafc" }}
         >
           <TileLayer
             attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            url={tileUrl}
           />
           {devices.map((dev) => {
             const lat = dev.latitude || 23.8103;

@@ -3,12 +3,8 @@ import { useAuth } from "../../context/AuthContext";
 import { api } from "../../services/api";
 import {
   UserCheck,
-  KeyRound,
-  Shield,
   History,
   Lock,
-  CheckCircle,
-  AlertCircle,
   Save
 } from "lucide-react";
 
@@ -24,11 +20,6 @@ export function ProfileView() {
   const [curPass, setCurPass] = useState("");
   const [newPass, setNewPass] = useState("");
   const [passMsg, setPassMsg] = useState("");
-
-  // Passkey Form
-  const [curPasskey, setCurPasskey] = useState("");
-  const [newPasskey, setNewPasskey] = useState("");
-  const [passkeyMsg, setPasskeyMsg] = useState("");
 
   // Login History
   const [history, setHistory] = useState([]);
@@ -71,95 +62,82 @@ export function ProfileView() {
     }
   }
 
-  async function handleChangePasskey(e) {
-    e.preventDefault();
-    try {
-      await api.changePasskey({ currentPasskey: curPasskey, newPasskey: newPasskey });
-      setPasskeyMsg("Master Passkey updated successfully.");
-      setCurPasskey("");
-      setNewPasskey("");
-      setTimeout(() => setPasskeyMsg(""), 3000);
-    } catch (e) {
-      setPasskeyMsg(e.message || "Failed to update passkey.");
-    }
-  }
-
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 animate-fadeIn">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 animate-fadeIn transition-colors">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-          <UserCheck className="w-6 h-6 text-emerald-400" />
-          User Profile & Enterprise Security Center
+        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
+          <UserCheck className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+          User Profile & Security Center
         </h2>
-        <p className="text-xs text-slate-400 mt-1">
-          Identity management, Master Passkey reconfiguration, and login audit trails.
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          Identity management, password updates, and login audit trails.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* 1. Profile Details Card */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-          <div className="flex items-center gap-3.5 pb-3 border-b border-slate-800">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-950/60 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-extrabold text-base">
+        <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+          <div className="flex items-center gap-3.5 pb-3 border-b border-slate-200 dark:border-slate-800">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-500/40 flex items-center justify-center text-emerald-700 dark:text-emerald-400 font-extrabold text-base">
               {user?.user_id_code?.slice(-3) || "001"}
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">{user?.name}</h3>
-              <span className="text-xs font-mono text-emerald-400 font-semibold">{user?.user_id_code}</span>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">{user?.name}</h3>
+              <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold">{user?.user_id_code}</span>
             </div>
           </div>
 
           {profileMsg && (
-            <div className="p-2.5 bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs rounded-xl">
+            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 text-xs rounded-xl">
               {profileMsg}
             </div>
           )}
 
           <form onSubmit={handleUpdateProfile} className="space-y-3.5 text-xs">
             <div>
-              <label className="block text-slate-400 mb-1">Full Name</label>
+              <label className="block text-slate-600 dark:text-slate-400 mb-1">Full Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             <div>
-              <label className="block text-slate-400 mb-1">Username (Immutable)</label>
+              <label className="block text-slate-600 dark:text-slate-400 mb-1">Username (Immutable)</label>
               <input
                 type="text"
                 value={user?.username || ""}
                 disabled
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-500 font-mono"
+                className="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-400 dark:text-slate-500 font-mono"
               />
             </div>
 
             <div>
-              <label className="block text-slate-400 mb-1">Email Address</label>
+              <label className="block text-slate-600 dark:text-slate-400 mb-1">Email Address</label>
               <input
                 type="email"
                 value={user?.email || ""}
                 disabled
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-500 font-mono"
+                className="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-400 dark:text-slate-500 font-mono"
               />
             </div>
 
             <div>
-              <label className="block text-slate-400 mb-1">User ID Badge</label>
+              <label className="block text-slate-600 dark:text-slate-400 mb-1">User ID Badge</label>
               <input
                 type="text"
                 value={user?.user_id_code || "ANAMI-001"}
                 disabled
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-emerald-400 font-mono font-bold"
+                className="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-emerald-600 dark:text-emerald-400 font-mono font-bold"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-md shadow-emerald-950/30 flex items-center justify-center gap-1.5"
+              className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5"
             >
               <Save className="w-4 h-4" />
               <span>Save Profile Changes</span>
@@ -167,17 +145,16 @@ export function ProfileView() {
           </form>
         </div>
 
-        {/* 2. Password & Master Passkey Change */}
+        {/* 2. Password Change */}
         <div className="space-y-6">
-          {/* Change Password */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <Lock className="w-4 h-4 text-emerald-400" />
+          <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <Lock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               Change Login Password
             </h3>
 
             {passMsg && (
-              <div className="p-2 bg-slate-950 border border-slate-800 text-xs text-emerald-400 rounded-lg">
+              <div className="p-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-emerald-600 dark:text-emerald-400 rounded-lg">
                 {passMsg}
               </div>
             )}
@@ -189,7 +166,7 @@ export function ProfileView() {
                   placeholder="Current Password"
                   value={curPass}
                   onChange={(e) => setCurPass(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono outline-none focus:border-emerald-500"
                   required
                 />
               </div>
@@ -199,89 +176,46 @@ export function ProfileView() {
                   placeholder="New Password"
                   value={newPass}
                   onChange={(e) => setNewPass(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono outline-none focus:border-emerald-500"
                   required
                 />
               </div>
               <button
                 type="submit"
-                className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl"
+                className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl transition-colors"
               >
                 Update Password
-              </button>
-            </form>
-          </div>
-
-          {/* Change Master Passkey */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-emerald-400" />
-              Change Master Passkey
-            </h3>
-
-            {passkeyMsg && (
-              <div className="p-2 bg-slate-950 border border-slate-800 text-xs text-emerald-400 rounded-lg">
-                {passkeyMsg}
-              </div>
-            )}
-
-            <form onSubmit={handleChangePasskey} className="space-y-3 text-xs">
-              <div>
-                <input
-                  type="password"
-                  placeholder="Current Master Passkey"
-                  value={curPasskey}
-                  onChange={(e) => setCurPasskey(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono"
-                  required
-                />
-              </div>
-              <div>
-                <input
-                  type="password"
-                  placeholder="New Master Passkey"
-                  value={newPasskey}
-                  onChange={(e) => setNewPasskey(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full py-2 bg-emerald-600/80 hover:bg-emerald-500 text-white font-semibold rounded-xl"
-              >
-                Update Master Passkey
               </button>
             </form>
           </div>
         </div>
 
         {/* 3. Login History Audit Trail */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <History className="w-4 h-4 text-emerald-400" />
+        <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <History className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               Login Audit Trail
             </h3>
-            <span className="text-[11px] text-slate-500 font-mono">Last 20 Logins</span>
+            <span className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">Last 20 Logins</span>
           </div>
 
           <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1 text-xs font-mono">
             {history.length === 0 && (
-              <div className="text-center py-8 text-slate-500">No login records found.</div>
+              <div className="text-center py-8 text-slate-400 dark:text-slate-500">No login records found.</div>
             )}
 
             {history.map((h) => (
-              <div key={h.id} className="p-2.5 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+              <div key={h.id} className="p-2.5 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className={h.status === "SUCCESS" ? "text-emerald-400 font-bold" : "text-rose-400 font-bold"}>
+                  <span className={h.status === "SUCCESS" ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-rose-600 dark:text-rose-400 font-bold"}>
                     {h.status}
                   </span>
-                  <span className="text-slate-500 text-[10px]">
+                  <span className="text-slate-400 dark:text-slate-500 text-[10px]">
                     {new Date(h.timestamp).toLocaleString()}
                   </span>
                 </div>
-                <div className="text-slate-400 text-[11px]">IP: {h.ip_address || "127.0.0.1"}</div>
+                <div className="text-slate-500 dark:text-slate-400 text-[11px]">IP: {h.ip_address || "127.0.0.1"}</div>
               </div>
             ))}
           </div>

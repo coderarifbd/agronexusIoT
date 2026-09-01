@@ -36,23 +36,23 @@ export function AlertsDrawer({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="w-full max-w-md bg-slate-900 border-l border-slate-800 h-full flex flex-col shadow-2xl">
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm animate-fadeIn">
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full flex flex-col shadow-2xl transition-colors">
+        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Bell className="w-5 h-5 text-emerald-400" />
-            <h3 className="font-bold text-white">System Alerts & Notifications</h3>
+            <Bell className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <h3 className="font-bold text-slate-900 dark:text-white">System Alerts & Notifications</h3>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800">
+          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-4 overflow-y-auto flex-1 space-y-3">
-          {loading && <div className="text-center text-slate-500 py-8">Loading alerts...</div>}
+          {loading && <div className="text-center text-slate-400 dark:text-slate-500 py-8">Loading alerts...</div>}
           {!loading && alerts.length === 0 && (
             <div className="text-center text-slate-500 py-12">
-              <Check className="w-8 h-8 mx-auto mb-2 text-emerald-500/50" />
+              <Check className="w-8 h-8 mx-auto mb-2 text-emerald-500" />
               All systems nominal. No active alerts.
             </div>
           )}
@@ -66,37 +66,37 @@ export function AlertsDrawer({ isOpen, onClose }) {
                 key={a.id}
                 className={`p-3.5 rounded-xl border transition-all ${
                   a.is_read
-                    ? "bg-slate-950/40 border-slate-800/60 opacity-60"
+                    ? "bg-slate-50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800/60 opacity-60"
                     : isCrit
-                    ? "bg-rose-950/30 border-rose-500/40"
+                    ? "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-500/40"
                     : isWarn
-                    ? "bg-amber-950/30 border-amber-500/40"
-                    : "bg-blue-950/30 border-blue-500/40"
+                    ? "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-500/40"
+                    : "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-500/40"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
                     {isCrit ? (
-                      <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                      <AlertCircle className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0" />
                     ) : isWarn ? (
-                      <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                      <AlertTriangle className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />
                     ) : (
-                      <Info className="w-4 h-4 text-blue-400 shrink-0" />
+                      <Info className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0" />
                     )}
-                    <span className="text-sm font-semibold text-white">{a.title}</span>
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white">{a.title}</span>
                   </div>
                   {!a.is_read && (
                     <button
                       onClick={() => handleMarkRead(a.id)}
                       title="Mark as read"
-                      className="text-[11px] text-slate-400 hover:text-emerald-400 underline"
+                      className="text-[11px] text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 underline"
                     >
                       Dismiss
                     </button>
                   )}
                 </div>
-                <p className="text-xs text-slate-300 mt-1.5 pl-6">{a.message}</p>
-                <div className="text-[10px] text-slate-500 font-mono mt-2 pl-6">
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-1.5 pl-6">{a.message}</p>
+                <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-2 pl-6">
                   {new Date(a.created_at).toLocaleString()}
                 </div>
               </div>

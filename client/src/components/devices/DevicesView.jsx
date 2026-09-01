@@ -1,21 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../../services/api";
-import { useSocket } from "../../context/SocketContext";
 import {
   Cpu,
   Plus,
   Wifi,
   Battery,
-  Key,
   Copy,
   Check,
-  RefreshCw,
   Trash2,
-  Terminal,
-  Code,
-  Radio,
-  Zap,
-  MapPin
+  Code
 } from "lucide-react";
 
 export function DevicesView() {
@@ -129,22 +122,22 @@ void loop() {
 }`;
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 animate-fadeIn">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 animate-fadeIn transition-colors">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-            <Cpu className="w-6 h-6 text-emerald-400" />
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
+            <Cpu className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
             IoT Microcontroller Fleet & Device Keys
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Manage ESP32, ESP8266, Arduino microcontrollers, generate device secrets and view live health.
           </p>
         </div>
 
         <button
           onClick={() => setShowRegisterModal(true)}
-          className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-emerald-950/30 transition-all"
+          className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-md shadow-emerald-600/20 transition-all"
         >
           <Plus className="w-4 h-4" />
           <span>+ Register New Device</span>
@@ -161,43 +154,43 @@ void loop() {
             <div
               key={dev.id}
               onClick={() => setSelectedDevice(dev)}
-              className={`p-5 rounded-2xl border cursor-pointer transition-all shadow-md ${
+              className={`p-5 rounded-2xl border cursor-pointer transition-all shadow-sm ${
                 isSelected
-                  ? "bg-slate-900 border-emerald-500 ring-1 ring-emerald-500/40"
-                  : "bg-slate-900/80 border-slate-800 hover:border-slate-700"
+                  ? "bg-emerald-50/50 dark:bg-slate-900 border-emerald-500 ring-1 ring-emerald-500/40"
+                  : "bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
               }`}
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-400">
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                     <Cpu className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-white">{dev.name}</h4>
-                    <span className="text-xs font-mono text-emerald-400 font-semibold">{dev.device_id_code}</span>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">{dev.name}</h4>
+                    <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold">{dev.device_id_code}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <span className={`w-2 h-2 rounded-full ${isOnline ? "bg-emerald-400 animate-ping" : "bg-rose-500"}`} />
-                  <span className={`text-[11px] font-bold uppercase ${isOnline ? "text-emerald-400" : "text-rose-400"}`}>
+                  <span className={`w-2 h-2 rounded-full ${isOnline ? "bg-emerald-500 animate-ping" : "bg-rose-500"}`} />
+                  <span className={`text-[11px] font-bold uppercase ${isOnline ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500"}`}>
                     {dev.status}
                   </span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 my-3 text-xs bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 font-mono">
-                <div className="flex items-center gap-1.5 text-slate-300">
-                  <Battery className="w-3.5 h-3.5 text-emerald-400" />
+              <div className="grid grid-cols-2 gap-2 my-3 text-xs bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800/80 font-mono">
+                <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                  <Battery className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span>{dev.battery_level || 85}%</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-slate-300">
-                  <Wifi className="w-3.5 h-3.5 text-blue-400" />
+                <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                  <Wifi className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
                   <span>{dev.wifi_rssi || -58} dBm</span>
                 </div>
               </div>
 
-              <div className="text-[11px] text-slate-400 font-mono flex items-center justify-between pt-2 border-t border-slate-800">
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
                 <span>Type: {dev.device_type}</span>
                 <span>FW: {dev.firmware_version}</span>
               </div>
@@ -208,23 +201,23 @@ void loop() {
 
       {/* Selected Device Code Snippet & Credentials Hub */}
       {selectedDevice && (
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-5">
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
+        <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm dark:shadow-xl space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-emerald-400 font-bold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30">
+                <span className="text-xs font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-500/30">
                   {selectedDevice.device_id_code}
                 </span>
-                <h3 className="text-lg font-bold text-white">{selectedDevice.name}</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">{selectedDevice.name}</h3>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Location: {selectedDevice.location_name} • IP: {selectedDevice.ip_address || "192.168.1.105"}
               </p>
             </div>
 
             <button
               onClick={() => handleDeleteDevice(selectedDevice.id)}
-              className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 p-2 rounded-lg bg-rose-500/10 border border-rose-500/30"
+              className="text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 flex items-center gap-1 p-2 rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Delete Device</span>
@@ -233,75 +226,75 @@ void loop() {
 
           {/* Credentials Bar */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
-              <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">
+            <div className="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
+              <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">
                 Device Secret API Key
               </label>
-              <div className="flex items-center justify-between font-mono text-xs text-emerald-400 break-all">
+              <div className="flex items-center justify-between font-mono text-xs text-emerald-600 dark:text-emerald-400 break-all">
                 <span>{selectedDevice.api_key}</span>
                 <button
                   onClick={() => handleCopy(selectedDevice.api_key, "apikey")}
-                  className="p-1.5 text-slate-400 hover:text-white"
+                  className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 >
-                  {copiedKey === "apikey" ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                  {copiedKey === "apikey" ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
-              <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">
+            <div className="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
+              <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">
                 Device Auth Secret Token
               </label>
-              <div className="flex items-center justify-between font-mono text-xs text-slate-300 break-all">
+              <div className="flex items-center justify-between font-mono text-xs text-slate-700 dark:text-slate-300 break-all">
                 <span>{selectedDevice.device_secret}</span>
                 <button
                   onClick={() => handleCopy(selectedDevice.device_secret, "secret")}
-                  className="p-1.5 text-slate-400 hover:text-white"
+                  className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 >
-                  {copiedKey === "secret" ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                  {copiedKey === "secret" ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Code Integration Tabs (cURL & Arduino C++) */}
+          {/* Code Integration Tabs */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
-              <Code className="w-4 h-4 text-emerald-400" />
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
+              <Code className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               Instant Hardware Integration Code
             </h4>
 
             <div className="space-y-4">
               {/* cURL */}
-              <div className="bg-slate-950 rounded-xl border border-slate-800 overflow-hidden">
-                <div className="bg-slate-900/90 px-4 py-2 flex items-center justify-between border-b border-slate-800 text-xs text-slate-400 font-mono">
+              <div className="bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                <div className="bg-slate-100 dark:bg-slate-900/90 px-4 py-2 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 font-mono">
                   <span>REST API POST /api/data</span>
                   <button
                     onClick={() => handleCopy(sampleCurl, "curl")}
-                    className="flex items-center gap-1 text-slate-300 hover:text-white"
+                    className="flex items-center gap-1 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                   >
-                    {copiedKey === "curl" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedKey === "curl" ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>Copy</span>
                   </button>
                 </div>
-                <pre className="p-4 text-xs font-mono text-emerald-300 overflow-x-auto">
+                <pre className="p-4 text-xs font-mono text-emerald-700 dark:text-emerald-300 overflow-x-auto">
                   {sampleCurl}
                 </pre>
               </div>
 
               {/* Arduino ESP32 */}
-              <div className="bg-slate-950 rounded-xl border border-slate-800 overflow-hidden">
-                <div className="bg-slate-900/90 px-4 py-2 flex items-center justify-between border-b border-slate-800 text-xs text-slate-400 font-mono">
+              <div className="bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                <div className="bg-slate-100 dark:bg-slate-900/90 px-4 py-2 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 font-mono">
                   <span>ESP32 Arduino Sketch (.ino)</span>
                   <button
                     onClick={() => handleCopy(sampleArduinoCode, "arduino")}
-                    className="flex items-center gap-1 text-slate-300 hover:text-white"
+                    className="flex items-center gap-1 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
                   >
-                    {copiedKey === "arduino" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedKey === "arduino" ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>Copy</span>
                   </button>
                 </div>
-                <pre className="p-4 text-xs font-mono text-slate-300 overflow-x-auto max-h-56">
+                <pre className="p-4 text-xs font-mono text-slate-700 dark:text-slate-300 overflow-x-auto max-h-56">
                   {sampleArduinoCode}
                 </pre>
               </div>
@@ -312,28 +305,28 @@ void loop() {
 
       {/* Register Device Modal */}
       {showRegisterModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-4">Register New IoT Microcontroller</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Register New IoT Microcontroller</h3>
             <form onSubmit={handleRegister} className="space-y-4">
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Device Name</label>
+                <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Device Name</label>
                 <input
                   type="text"
                   value={deviceName}
                   onChange={(e) => setDeviceName(e.target.value)}
                   placeholder="e.g. ESP32 Greenhouse Node #4"
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2 text-sm text-slate-900 dark:text-white focus:outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Device Architecture</label>
+                <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Device Architecture</label>
                 <select
                   value={deviceType}
                   onChange={(e) => setDeviceType(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2 text-sm text-slate-900 dark:text-white focus:outline-none"
                 >
                   <option value="ESP32">ESP32 (Wi-Fi + BLE)</option>
                   <option value="ESP8266">ESP8266 (NodeMCU)</option>
@@ -343,13 +336,13 @@ void loop() {
               </div>
 
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Deployment Location</label>
+                <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Deployment Location</label>
                 <input
                   type="text"
                   value={locationName}
                   onChange={(e) => setLocationName(e.target.value)}
                   placeholder="e.g. Nursery Hydroponics Rack"
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2 text-sm text-slate-900 dark:text-white focus:outline-none"
                 />
               </div>
 
@@ -357,7 +350,7 @@ void loop() {
                 <button
                   type="button"
                   onClick={() => setShowRegisterModal(false)}
-                  className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold"
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold"
                 >
                   Cancel
                 </button>

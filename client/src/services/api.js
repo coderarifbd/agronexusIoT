@@ -54,12 +54,23 @@ export const api = {
   removeProjectMember: (projectId, memberId) => request(`/projects/${projectId}/members/${memberId}`, { method: "DELETE" }),
 
   // Channels
+  getMyChannels: () => request("/channels/my/all"),
   getChannels: (projectId) => request(`/channels/project/${projectId}`),
   createChannel: (data) => request("/channels", { method: "POST", body: JSON.stringify(data) }),
   getChannel: (id) => request(`/channels/${id}`),
   updateChannel: (id, data) => request(`/channels/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteChannel: (id) => request(`/channels/${id}`, { method: "DELETE" }),
+  deleteField: (fieldId) => request(`/channels/fields/${fieldId}`, { method: "DELETE" }),
   regenerateChannelKeys: (id) => request(`/channels/${id}/regenerate-keys`, { method: "POST" }),
+  regenerateWriteKey: (id) => request(`/channels/${id}/regenerate-write-key`, { method: "POST" }),
+  getReadKeys: (id) => request(`/channels/${id}/read-keys`),
+  addReadKey: (id, data) => request(`/channels/${id}/read-keys`, { method: "POST", body: JSON.stringify(data) }),
+  updateReadKey: (id, keyId, data) => request(`/channels/${id}/read-keys/${keyId}`, { method: "PUT", body: JSON.stringify(data) }),
+  deleteReadKey: (id, keyId) => request(`/channels/${id}/read-keys/${keyId}`, { method: "DELETE" }),
+  getChannelShares: (id) => request(`/channels/${id}/shares`),
+  addChannelShare: (id, data) => request(`/channels/${id}/shares`, { method: "POST", body: JSON.stringify(data) }),
+  deleteChannelShare: (id, shareId) => request(`/channels/${id}/shares/${shareId}`, { method: "DELETE" }),
+  updateSharingMode: (id, sharing_mode) => request(`/channels/${id}/sharing-mode`, { method: "PUT", body: JSON.stringify({ sharing_mode }) }),
 
   // Dynamic Fields
   addField: (channelId, data) => request(`/channels/${channelId}/fields`, { method: "POST", body: JSON.stringify(data) }),
@@ -82,6 +93,8 @@ export const api = {
 
   // Telemetry & Historical Data
   getHistoricalData: (channelId, range = "24h") => request(`/telemetry/channel/${channelId}/historical?range=${range}`),
+  getTelemetry: (channelId, range = "24h") => request(`/telemetry/channel/${channelId}/historical?range=${range}`),
+  importChannelCsv: (channelId, data) => request(`/telemetry/channel/${channelId}/import-csv`, { method: "POST", body: JSON.stringify(data) }),
   getAnalytics: (channelId, range = "24h") => request(`/telemetry/channel/${channelId}/analytics?range=${range}`),
   sendTelemetryData: (data) => request("/data", { method: "POST", body: JSON.stringify(data) }),
 
@@ -102,6 +115,7 @@ export const api = {
   // Custom Dashboard Widgets
   getWidgets: (channelId) => request(`/dashboards/channel/${channelId}/widgets`),
   addWidget: (channelId, data) => request(`/dashboards/channel/${channelId}/widgets`, { method: "POST", body: JSON.stringify(data) }),
+  updateWidget: (id, data) => request(`/dashboards/widgets/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteWidget: (id) => request(`/dashboards/widgets/${id}`, { method: "DELETE" }),
   getPublicDashboard: (slug, password) => request(`/dashboards/public/${slug}${password ? `?password=${encodeURIComponent(password)}` : ""}`),
 

@@ -6,12 +6,10 @@ import {
   Wind,
   Sun,
   Activity,
-  Zap,
-  TrendingUp,
-  TrendingDown
+  Zap
 } from "lucide-react";
 
-export function MetricCard({ field, value, unit, color = "#10B981", min = 0, max = 100, lastUpdate }) {
+export function MetricCard({ field, value, unit, color = "#10B981", min = 0, max = 100 }) {
   const numVal = typeof value === "number" ? value : parseFloat(value) || 0;
   const percentage = Math.min(100, Math.max(0, ((numVal - min) / (max - min)) * 100));
 
@@ -41,41 +39,41 @@ export function MetricCard({ field, value, unit, color = "#10B981", min = 0, max
   };
 
   return (
-    <div className="bg-slate-900/80 border border-slate-800/90 rounded-2xl p-4 sm:p-5 hover:border-slate-700 transition-all shadow-md relative overflow-hidden group">
+    <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/90 rounded-2xl p-4 sm:p-5 hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-sm dark:shadow-md relative overflow-hidden group">
       {/* Background Accent Gradient */}
       <div
-        className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full blur-2xl opacity-15 transition-opacity group-hover:opacity-30 pointer-events-none"
+        className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full blur-2xl opacity-10 dark:opacity-15 transition-opacity group-hover:opacity-25 pointer-events-none"
         style={{ backgroundColor: color }}
       />
 
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider truncate">
+        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
           {field?.name || field}
         </span>
         <div
-          className="w-8 h-8 rounded-xl flex items-center justify-center text-white"
-          style={{ backgroundColor: `${color}25`, color: color }}
+          className="w-8 h-8 rounded-xl flex items-center justify-center"
+          style={{ backgroundColor: `${color}20`, color: color }}
         >
           {getIcon(field?.field_key || field)}
         </div>
       </div>
 
       <div className="flex items-baseline gap-2 mb-3">
-        <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-mono">
+        <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight font-mono">
           {value !== undefined && value !== null ? value : "--"}
         </span>
-        <span className="text-sm font-semibold text-slate-400">{unit || field?.unit || ""}</span>
+        <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">{unit || field?.unit || ""}</span>
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden mb-2">
+      <div className="w-full bg-slate-100 dark:bg-slate-950 rounded-full h-1.5 overflow-hidden mb-2">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${percentage}%`, backgroundColor: color }}
         />
       </div>
 
-      <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+      <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-mono">
         <span>Min: {min}</span>
         <span>Max: {max}</span>
       </div>

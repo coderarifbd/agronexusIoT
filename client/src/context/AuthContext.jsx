@@ -6,9 +6,7 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("agx_token"));
-  const [isPasskeyUnlocked, setIsPasskeyUnlocked] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showPasskeyModal, setShowPasskeyModal] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -22,8 +20,6 @@ export function AuthProvider({ children }) {
     try {
       const res = await api.getProfile();
       setUser(res.user);
-      const passkeyStatus = await api.getPasskeyStatus().catch(() => ({ unlocked: false }));
-      setIsPasskeyUnlocked(passkeyStatus.unlocked);
     } catch (err) {
       console.error("Profile load failed:", err);
       logout();
@@ -37,8 +33,6 @@ export function AuthProvider({ children }) {
     localStorage.setItem("agx_token", res.token);
     setToken(res.token);
     setUser(res.user);
-    // Open passkey unlock modal after login
-    setShowPasskeyModal(true);
     return res;
   }
 
@@ -50,26 +44,11 @@ export function AuthProvider({ children }) {
     return res;
   }
 
-  async function unlockWithPasskey(passkey) {
-    const res = await api.verifyPasskey(passkey);
-    sessionStorage.setItem("agx_master_passkey", passkey);
-    setIsPasskeyUnlocked(true);
-    setShowPasskeyModal(false);
-    return res;
-  }
-
-  function lockDashboard() {
-    api.lockPasskey().catch(() => {});
-    sessionStorage.removeItem("agx_master_passkey");
-    setIsPasskeyUnlocked(false);
-  }
-
   function logout() {
     localStorage.removeItem("agx_token");
     sessionStorage.removeItem("agx_master_passkey");
     setToken(null);
     setUser(null);
-    setIsPasskeyUnlocked(false);
   }
 
   return (
@@ -78,13 +57,13 @@ export function AuthProvider({ children }) {
         user,
         token,
         loading,
-        isPasskeyUnlocked,
-        showPasskeyModal,
-        setShowPasskeyModal,
+        isPasskeyUnlocked: true, // Always unlocked now
+        showPasskeyModal: false,
+        setShowPasskeyModal: () => {},
         login,
         register,
-        unlockWithPasskey,
-        lockDashboard,
+        unlockWithPasskey: async () => ({ unlocked: true }),
+        lockDashboard: () => {},
         logout,
         refreshProfile: loadProfile
       }}

@@ -1,6 +1,8 @@
 import React from "react";
+import { useTheme } from "../../context/ThemeContext";
 
 export function GaugeWidget({ title, value, unit = "°C", min = 0, max = 100, color = "#10B981" }) {
+  const { isDark } = useTheme();
   const num = typeof value === "number" ? value : parseFloat(value) || 0;
   const clamped = Math.max(min, Math.min(max, num));
   const fraction = (clamped - min) / (max - min);
@@ -13,8 +15,8 @@ export function GaugeWidget({ title, value, unit = "°C", min = 0, max = 100, co
   const strokeDashoffset = circumference - fraction * circumference;
 
   return (
-    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-between text-center relative overflow-hidden h-full">
-      <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+    <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-between text-center relative overflow-hidden h-full shadow-sm dark:shadow-md transition-colors">
+      <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
         {title}
       </div>
 
@@ -24,7 +26,7 @@ export function GaugeWidget({ title, value, unit = "°C", min = 0, max = 100, co
           <path
             d={`M ${stroke} ${radius} A ${normalizedRadius} ${normalizedRadius} 0 0 1 ${radius * 2 - stroke} ${radius}`}
             fill="none"
-            stroke="#1f293d"
+            stroke={isDark ? "#1f293d" : "#e2e8f0"}
             strokeWidth={stroke}
             strokeLinecap="round"
           />
@@ -43,14 +45,14 @@ export function GaugeWidget({ title, value, unit = "°C", min = 0, max = 100, co
 
         {/* Value in Center */}
         <div className="absolute top-10 flex flex-col items-center">
-          <span className="text-2xl font-extrabold text-white font-mono">{num}</span>
-          <span className="text-xs text-slate-400 font-semibold">{unit}</span>
+          <span className="text-2xl font-extrabold text-slate-900 dark:text-white font-mono">{num}</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">{unit}</span>
         </div>
       </div>
 
-      <div className="w-full flex items-center justify-between text-[10px] text-slate-500 font-mono px-4">
+      <div className="w-full flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-mono px-4">
         <span>{min}</span>
-        <span className="text-emerald-400">Live Telemetry</span>
+        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Live Telemetry</span>
         <span>{max}</span>
       </div>
     </div>

@@ -1,4 +1,6 @@
 import express from "express";
+import crypto from "crypto";
+import { v4 as uuidv4 } from "uuid";
 import { db } from "../db.js";
 import { applySensorCalibration } from "../services/calibrationEngine.js";
 import { evaluateCalculatedFields } from "../services/formulaEvaluator.js";
@@ -7,7 +9,89 @@ import { wsHub } from "../services/websocket.js";
 
 const router = express.Router();
 
-// Unified Ingest Endpoint (Item 7: POST /api/data)
+// Helper: Common ingestion processor
+async function processAndStoreTelemetry(channel, device, rawData) {
+  const sensorData = {};
+  for (const [k, v] of Object.entries(rawData)) {
+    if (!["device_id", "device_id_code", "api_key", "secret", "timestamp", "created_at"].includes(k)) {
+      if (typeof v === "number" || (typeof v === "string" && v.trim() !== "")) {
+        sensorData[k] = isNaN(Number(v)) ? v : Number(v);
+      }
+    }
+  }
+
+  let processedData = await applySensorCalibration(channel.id, sensorData);
+  processedData = await evaluateCalculatedFields(channel.id, processedData);
+
+  const timestamp = rawData.created_at || rawData.timestamp ? new Date(rawData.created_at || rawData.timestamp) : new Date();
+
+  const insertRes = await db.run(`
+    INSERT INTO telemetry_data (channel_id, device_id, data_json, timestamp)
+    VALUES ($1, $2, $3, $4)
+  `, [channel.id, device?.id || null, JSON.stringify(processedData), timestamp]);
+
+  if (device) {
+    const battery = rawData.battery || rawData.battery_level;
+    const wifi = rawData.wifi_rssi || rawData.rssi;
+    await db.run(`
+      UPDATE devices 
+      SET last_seen = NOW(), status = 'online',
+          battery_level = COALESCE($1, battery_level),
+          wifi_rssi = COALESCE($2, wifi_rssi)
+      WHERE id = $3
+    `, [battery, wifi, device.id]);
+  }
+
+  wsHub.broadcastTelemetry(channel.id, processedData, device?.id);
+  await evaluateAutomationRules(channel.id, processedData, device?.id);
+
+  return processedData;
+}
+
+// 1. ThingSpeak GET /update endpoint (e.g. GET /update?api_key=KEY&field1=0)
+router.get("/update", async (req, res) => {
+  const apiKey = req.query.api_key;
+  if (!apiKey) {
+    return res.status(400).send("0");
+  }
+
+  const channel = await db.get("SELECT * FROM channels WHERE api_write_key = $1", [apiKey]);
+  if (!channel) {
+    return res.status(404).send("0");
+  }
+
+  try {
+    await processAndStoreTelemetry(channel, null, req.query);
+    const countRow = await db.get("SELECT COUNT(*) as count FROM telemetry_data WHERE channel_id = $1", [channel.id]);
+    return res.status(200).send(String(countRow?.count || 1));
+  } catch (err) {
+    return res.status(500).send("0");
+  }
+});
+
+// 2. ThingSpeak POST /update endpoint
+router.post("/update", async (req, res) => {
+  const apiKey = req.body.api_key || req.query.api_key || req.headers["x-api-key"];
+  if (!apiKey) {
+    return res.status(400).send("0");
+  }
+
+  const channel = await db.get("SELECT * FROM channels WHERE api_write_key = $1", [apiKey]);
+  if (!channel) {
+    return res.status(404).send("0");
+  }
+
+  try {
+    const payload = { ...req.query, ...req.body };
+    await processAndStoreTelemetry(channel, null, payload);
+    const countRow = await db.get("SELECT COUNT(*) as count FROM telemetry_data WHERE channel_id = $1", [channel.id]);
+    return res.status(200).send(String(countRow?.count || 1));
+  } catch (err) {
+    return res.status(500).send("0");
+  }
+});
+
+// 3. Unified Ingest Endpoint (POST /api/data)
 router.post("/data", async (req, res) => {
   const apiKeyHeader = req.headers["x-api-key"] || req.headers["authorization"]?.replace("Bearer ", "");
   const payload = req.body;
@@ -38,37 +122,7 @@ router.post("/data", async (req, res) => {
     return res.status(404).json({ error: "Device or Channel not found or not mapped." });
   }
 
-  const sensorData = {};
-  for (const [k, v] of Object.entries(payload)) {
-    if (!["device_id", "device_id_code", "api_key", "secret"].includes(k)) {
-      if (typeof v === "number" || typeof v === "string") {
-        sensorData[k] = isNaN(Number(v)) ? v : Number(v);
-      }
-    }
-  }
-
-  let processedData = await applySensorCalibration(channel.id, sensorData);
-  processedData = await evaluateCalculatedFields(channel.id, processedData);
-
-  await db.run(`
-    INSERT INTO telemetry_data (channel_id, device_id, data_json, timestamp)
-    VALUES ($1, $2, $3, NOW())
-  `, [channel.id, device?.id || null, JSON.stringify(processedData)]);
-
-  if (device) {
-    const battery = payload.battery || payload.battery_level;
-    const wifi = payload.wifi_rssi || payload.rssi;
-    await db.run(`
-      UPDATE devices 
-      SET last_seen = NOW(), status = 'online',
-          battery_level = COALESCE($1, battery_level),
-          wifi_rssi = COALESCE($2, wifi_rssi)
-      WHERE id = $3
-    `, [battery, wifi, device.id]);
-  }
-
-  wsHub.broadcastTelemetry(channel.id, processedData, device?.id);
-  await evaluateAutomationRules(channel.id, processedData, device?.id);
+  const processedData = await processAndStoreTelemetry(channel, device, payload);
 
   res.status(200).json({
     success: true,
@@ -78,162 +132,236 @@ router.post("/data", async (req, res) => {
   });
 });
 
-// Channel Ingest by Write Key: POST /api/channels/:id/data
-router.post("/channel/:id/data", async (req, res) => {
+// 4. ThingSpeak Read Feed: GET /channels/:id/feeds.json
+router.get("/channels/:id/feeds.json", async (req, res) => {
   const channelId = req.params.id;
-  const apiKey = req.headers["x-api-key"] || req.body.api_key;
+  const { api_key, results = 50 } = req.query;
+
+  // Find channel by UUID or channel_number
+  const channel = await db.get(
+    "SELECT * FROM channels WHERE id = $1 OR channel_number::text = $1",
+    [channelId]
+  );
+
+  if (!channel) {
+    return res.status(404).json({ error: "Channel not found." });
+  }
+
+  // Check read key if private
+  if (!channel.is_public && channel.sharing_mode !== "everyone") {
+    const isReadKey = await db.get(
+      "SELECT id FROM channel_read_keys WHERE channel_id = $1 AND api_key = $2",
+      [channel.id, api_key]
+    );
+    if (!isReadKey && channel.api_read_key !== api_key && channel.api_write_key !== api_key) {
+      return res.status(401).json({ error: "Invalid Read API Key for private channel." });
+    }
+  }
+
+  const limit = Math.min(parseInt(results) || 50, 1000);
+  const rows = await db.all(
+    "SELECT id, timestamp, data_json FROM telemetry_data WHERE channel_id = $1 ORDER BY id DESC LIMIT $2",
+    [channel.id, limit]
+  );
+
+  const fields = await db.all(
+    "SELECT * FROM channel_fields WHERE channel_id = $1 ORDER BY field_order ASC",
+    [channel.id]
+  );
+
+  const fieldInfo = {};
+  fields.forEach((f, idx) => {
+    fieldInfo[`field${idx + 1}`] = f.name;
+  });
+
+  const feeds = rows.reverse().map((r, i) => {
+    let parsed = {};
+    try {
+      parsed = typeof r.data_json === "string" ? JSON.parse(r.data_json) : r.data_json;
+    } catch (e) {}
+
+    const feedObj = {
+      created_at: new Date(r.timestamp).toISOString(),
+      entry_id: i + 1
+    };
+
+    fields.forEach((f, idx) => {
+      const fKey = `field${idx + 1}`;
+      feedObj[fKey] = parsed[f.field_key] !== undefined ? String(parsed[f.field_key]) : (parsed[fKey] !== undefined ? String(parsed[fKey]) : null);
+    });
+
+    return feedObj;
+  });
+
+  res.json({
+    channel: {
+      id: channel.channel_number || channel.id,
+      name: channel.name,
+      description: channel.description,
+      latitude: String(channel.latitude || 0.0),
+      longitude: String(channel.longitude || 0.0),
+      created_at: channel.created_at,
+      updated_at: channel.updated_at,
+      last_entry_id: feeds.length,
+      ...fieldInfo
+    },
+    feeds
+  });
+});
+
+// 5. ThingSpeak Read Single Field: GET /channels/:id/fields/:fieldNum.json
+router.get("/channels/:id/fields/:fieldNum.json", async (req, res) => {
+  const channelId = req.params.id;
+  const fieldNum = parseInt(req.params.fieldNum) || 1;
+  const { api_key, results = 50 } = req.query;
+
+  const channel = await db.get(
+    "SELECT * FROM channels WHERE id = $1 OR channel_number::text = $1",
+    [channelId]
+  );
+
+  if (!channel) {
+    return res.status(404).json({ error: "Channel not found." });
+  }
+
+  const limit = Math.min(parseInt(results) || 50, 1000);
+  const rows = await db.all(
+    "SELECT id, timestamp, data_json FROM telemetry_data WHERE channel_id = $1 ORDER BY id DESC LIMIT $2",
+    [channel.id, limit]
+  );
+
+  const fields = await db.all(
+    "SELECT * FROM channel_fields WHERE channel_id = $1 ORDER BY field_order ASC",
+    [channel.id]
+  );
+
+  const targetField = fields[fieldNum - 1] || { name: `Field Label ${fieldNum}`, field_key: `field${fieldNum}` };
+  const targetKey = `field${fieldNum}`;
+
+  const feeds = rows.reverse().map((r, i) => {
+    let parsed = {};
+    try {
+      parsed = typeof r.data_json === "string" ? JSON.parse(r.data_json) : r.data_json;
+    } catch (e) {}
+
+    const val = parsed[targetField.field_key] !== undefined ? String(parsed[targetField.field_key]) : (parsed[targetKey] !== undefined ? String(parsed[targetKey]) : null);
+
+    return {
+      created_at: new Date(r.timestamp).toISOString(),
+      entry_id: i + 1,
+      [targetKey]: val
+    };
+  });
+
+  res.json({
+    channel: {
+      id: channel.channel_number || channel.id,
+      name: channel.name,
+      description: channel.description,
+      [targetKey]: targetField.name,
+      last_entry_id: feeds.length
+    },
+    feeds
+  });
+});
+
+// 6. ThingSpeak Read Channel Status: GET /channels/:id/status.json
+router.get("/channels/:id/status.json", async (req, res) => {
+  const channelId = req.params.id;
+  const channel = await db.get(
+    "SELECT * FROM channels WHERE id = $1 OR channel_number::text = $1",
+    [channelId]
+  );
+
+  if (!channel) {
+    return res.status(404).json({ error: "Channel not found." });
+  }
+
+  const latest = await db.get(
+    "SELECT * FROM telemetry_data WHERE channel_id = $1 ORDER BY id DESC LIMIT 1",
+    [channel.id]
+  );
+
+  res.json({
+    channel: {
+      id: channel.channel_number || channel.id,
+      name: channel.name,
+      description: channel.description,
+      status: channel.show_status ? "Active" : "Normal",
+      last_updated: latest?.timestamp || channel.updated_at
+    },
+    feeds: [
+      {
+        created_at: latest?.timestamp || new Date().toISOString(),
+        status: channel.show_status ? "Operational" : "OK"
+      }
+    ]
+  });
+});
+
+// 7. CSV Import Endpoint: POST /channels/:id/import-csv
+router.post("/channel/:channelId/import-csv", async (req, res) => {
+  const { channelId } = req.params;
+  const { csv_data, timezone } = req.body;
+
+  if (!csv_data || typeof csv_data !== "string") {
+    return res.status(400).json({ error: "CSV data string is required." });
+  }
 
   const channel = await db.get("SELECT * FROM channels WHERE id = $1", [channelId]);
   if (!channel) {
     return res.status(404).json({ error: "Channel not found." });
   }
 
-  if (apiKey && channel.api_write_key !== apiKey) {
-    return res.status(403).json({ error: "Invalid API Write Key." });
+  const lines = csv_data.trim().split(/\r?\n/).filter(Boolean);
+  if (lines.length < 2) {
+    return res.status(400).json({ error: "CSV file must contain a header and at least one data row." });
   }
 
-  const sensorData = { ...req.body };
-  delete sensorData.api_key;
+  const headers = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
+  let importedCount = 0;
 
-  let processed = await applySensorCalibration(channelId, sensorData);
-  processed = await evaluateCalculatedFields(channelId, processed);
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(",").map(v => v.trim().replace(/^"|"$/g, ""));
+    const rowObj = {};
+    headers.forEach((h, idx) => {
+      rowObj[h] = values[idx] !== undefined ? values[idx] : "";
+    });
 
-  await db.run(`
-    INSERT INTO telemetry_data (channel_id, data_json, timestamp)
-    VALUES ($1, $2, NOW())
-  `, [channelId, JSON.stringify(processed)]);
+    const timestamp = rowObj.created_at || rowObj.timestamp ? new Date(rowObj.created_at || rowObj.timestamp) : new Date();
 
-  wsHub.broadcastTelemetry(channelId, processed, null);
-  await evaluateAutomationRules(channelId, processed, null);
-
-  res.json({ success: true, channel_id: channelId, data: processed });
-});
-
-// Historical Telemetry Query
-router.get("/channel/:channelId/historical", async (req, res) => {
-  const { range = "24h", limit = 300 } = req.query;
-  const channelId = req.params.channelId;
-
-  let intervalStr = "24 hours";
-  if (range === "1h") intervalStr = "1 hours";
-  else if (range === "6h") intervalStr = "6 hours";
-  else if (range === "24h") intervalStr = "24 hours";
-  else if (range === "7d") intervalStr = "7 days";
-  else if (range === "30d") intervalStr = "30 days";
-  else if (range === "all") intervalStr = "365 days";
-
-  const rows = await db.all(`
-    SELECT id, data_json, timestamp 
-    FROM telemetry_data 
-    WHERE channel_id = $1 AND timestamp >= NOW() - ($2::interval)
-    ORDER BY timestamp ASC
-    LIMIT $3
-  `, [channelId, intervalStr, parseInt(limit, 10) || 300]);
-
-  const formatted = rows.map(r => {
-    let data = {};
-    try { data = typeof r.data_json === "string" ? JSON.parse(r.data_json) : r.data_json; } catch (e) {}
-    return {
-      id: r.id,
-      timestamp: r.timestamp,
-      ...data
-    };
-  });
-
-  res.json({
-    channelId,
-    range,
-    count: formatted.length,
-    records: formatted
-  });
-});
-
-// Advanced Analytics
-router.get("/channel/:channelId/analytics", async (req, res) => {
-  const { field, range = "24h" } = req.query;
-  const channelId = req.params.channelId;
-
-  let intervalStr = "24 hours";
-  if (range === "1h") intervalStr = "1 hours";
-  else if (range === "6h") intervalStr = "6 hours";
-  else if (range === "7d") intervalStr = "7 days";
-  else if (range === "30d") intervalStr = "30 days";
-
-  const rows = await db.all(`
-    SELECT data_json, timestamp 
-    FROM telemetry_data 
-    WHERE channel_id = $1 AND timestamp >= NOW() - ($2::interval)
-    ORDER BY timestamp ASC
-  `, [channelId, intervalStr]);
-
-  if (rows.length === 0) {
-    return res.json({ message: "No data available in this time range.", analytics: {} });
-  }
-
-  const fieldValuesMap = {};
-
-  for (const row of rows) {
-    try {
-      const data = typeof row.data_json === "string" ? JSON.parse(row.data_json) : row.data_json;
-      for (const [k, v] of Object.entries(data)) {
-        if (typeof v === "number" && !isNaN(v)) {
-          if (!fieldValuesMap[k]) fieldValuesMap[k] = [];
-          fieldValuesMap[k].push({ val: v, time: row.timestamp });
-        }
+    const dataObj = {};
+    for (const [k, v] of Object.entries(rowObj)) {
+      if (!["created_at", "timestamp", "entry_id"].includes(k) && v !== "") {
+        dataObj[k] = isNaN(Number(v)) ? v : Number(v);
       }
-    } catch (e) {}
+    }
+
+    await db.run(
+      "INSERT INTO telemetry_data (channel_id, data_json, timestamp) VALUES ($1, $2, $3)",
+      [channel.id, JSON.stringify(dataObj), timestamp]
+    );
+    importedCount++;
   }
 
-  const results = {};
+  wsHub.broadcastTelemetry(channel.id, { _imported: true });
 
-  for (const [fKey, arr] of Object.entries(fieldValuesMap)) {
-    if (field && field !== fKey) continue;
-    if (arr.length === 0) continue;
-
-    const values = arr.map(a => a.val);
-    const sorted = [...values].sort((a, b) => a - b);
-    const sum = values.reduce((a, b) => a + b, 0);
-    const avg = +(sum / values.length).toFixed(2);
-    const min = sorted[0];
-    const max = sorted[sorted.length - 1];
-    
-    const mid = Math.floor(sorted.length / 2);
-    const median = sorted.length % 2 !== 0 ? sorted[mid] : +((sorted[mid - 1] + sorted[mid]) / 2).toFixed(2);
-
-    const variance = values.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / values.length;
-    const stdDev = +Math.sqrt(variance).toFixed(2);
-
-    const firstVal = values[0];
-    const lastVal = values[values.length - 1];
-    const pctChange = firstVal !== 0 ? +(((lastVal - firstVal) / Math.abs(firstVal)) * 100).toFixed(2) : 0;
-    const trend = pctChange > 1 ? "RISING" : pctChange < -1 ? "FALLING" : "STABLE";
-
-    results[fKey] = {
-      count: values.length,
-      current: lastVal,
-      average: avg,
-      minimum: min,
-      maximum: max,
-      median,
-      stdDev,
-      percentChange: pctChange,
-      trend,
-      firstTimestamp: arr[0].time,
-      lastTimestamp: arr[arr.length - 1].time
-    };
-  }
-
-  res.json({ channelId, range, analytics: results });
+  res.status(200).json({
+    message: `Successfully imported ${importedCount} records into channel.`,
+    importedCount
+  });
 });
 
-// Data Export
-router.get("/channel/:channelId/export", async (req, res) => {
-  const { format = "json", range = "30d" } = req.query;
+// 8. Historical Telemetry for Dashboards
+router.get("/channel/:channelId/historical", async (req, res) => {
+  const { range = "24h" } = req.query;
   const channelId = req.params.channelId;
 
-  let intervalStr = "30 days";
+  let intervalStr = "24 hours";
   if (range === "7d") intervalStr = "7 days";
-  else if (range === "24h") intervalStr = "24 hours";
+  else if (range === "30d") intervalStr = "30 days";
+  else if (range === "1h") intervalStr = "1 hour";
+  else if (range === "6h") intervalStr = "6 hours";
 
   const rows = await db.all(`
     SELECT id, timestamp, data_json 
@@ -242,18 +370,51 @@ router.get("/channel/:channelId/export", async (req, res) => {
     ORDER BY timestamp ASC
   `, [channelId, intervalStr]);
 
-  const flatData = rows.map(r => {
+  res.json({ channelId, range, count: rows.length, data: rows });
+});
+
+// 9. Data Export (CSV & JSON)
+router.get("/channel/:channelId/export", async (req, res) => {
+  const { format = "json", range = "30d", timezone = "UTC" } = req.query;
+  const channelId = req.params.channelId;
+
+  const channel = await db.get("SELECT * FROM channels WHERE id = $1", [channelId]);
+  const fields = await db.all("SELECT * FROM channel_fields WHERE channel_id = $1 ORDER BY field_order ASC", [channelId]);
+
+  const rows = await db.all(
+    "SELECT id, timestamp, data_json FROM telemetry_data WHERE channel_id = $1 ORDER BY timestamp ASC",
+    [channelId]
+  );
+
+  const flatData = rows.map((r, idx) => {
     let parsed = {};
-    try { parsed = typeof r.data_json === "string" ? JSON.parse(r.data_json) : r.data_json; } catch (e) {}
-    return {
-      timestamp: r.timestamp,
-      ...parsed
+    try {
+      parsed = typeof r.data_json === "string" ? JSON.parse(r.data_json) : r.data_json;
+    } catch (e) {}
+
+    const rowObj = {
+      created_at: new Date(r.timestamp).toISOString(),
+      entry_id: idx + 1
     };
+
+    fields.forEach((f, fIdx) => {
+      const fieldKey = `field${fIdx + 1}`;
+      rowObj[fieldKey] = parsed[f.field_key] !== undefined ? parsed[f.field_key] : (parsed[fieldKey] !== undefined ? parsed[fieldKey] : "");
+    });
+
+    if (channel?.latitude) rowObj.latitude = channel.latitude;
+    if (channel?.longitude) rowObj.longitude = channel.longitude;
+    if (channel?.elevation) rowObj.elevation = channel.elevation;
+
+    return rowObj;
   });
 
   if (format === "csv") {
     if (flatData.length === 0) {
-      return res.status(200).send("timestamp\n");
+      const header = ["created_at", "entry_id", ...fields.map((_, i) => `field${i + 1}`)].join(",");
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename="channel_${channel?.channel_number || channelId}.csv"`);
+      return res.status(200).send(header + "\n");
     }
 
     const allKeys = Array.from(new Set(flatData.flatMap(Object.keys)));
@@ -264,11 +425,16 @@ router.get("/channel/:channelId/export", async (req, res) => {
 
     const csvContent = [header, ...csvRows].join("\n");
     res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Content-Disposition", `attachment; filename="channel_${channelId}_telemetry.csv"`);
+    res.setHeader("Content-Disposition", `attachment; filename="channel_${channel?.channel_number || channelId}.csv"`);
     return res.send(csvContent);
   }
 
-  res.json({ channelId, exportedAt: new Date().toISOString(), totalRecords: flatData.length, data: flatData });
+  res.json({
+    channelId,
+    exportedAt: new Date().toISOString(),
+    totalRecords: flatData.length,
+    data: flatData
+  });
 });
 
 export default router;

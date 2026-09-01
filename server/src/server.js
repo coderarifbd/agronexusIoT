@@ -13,7 +13,8 @@ async function startServer() {
     await initDatabase();
     wsHub.init(server);
     scheduler.start();
-    simulator.start();
+    // Virtual simulator disabled by default: only real sensor data will update widgets
+    // simulator.start();
 
     server.listen(CONFIG.PORT, () => {
       console.log(`?? AgroNexus IoT Server listening on http://localhost:${CONFIG.PORT}`);

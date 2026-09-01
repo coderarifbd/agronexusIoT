@@ -50,6 +50,7 @@ export function SocketProvider({ children }) {
       value={{
         socketClient,
         latestTelemetry,
+        telemetry: latestTelemetry,
         actuatorStates,
         alerts,
         toastAlert,

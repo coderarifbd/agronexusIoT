@@ -30,6 +30,20 @@ router.post("/channel/:channelId/widgets", authenticateToken, async (req, res) =
   res.status(201).json({ message: "Widget added to dashboard.", widget: created });
 });
 
+router.put("/widgets/:id", authenticateToken, async (req, res) => {
+  const { title, field_key, config } = req.body;
+  await db.run(`
+    UPDATE dashboard_widgets 
+    SET title = COALESCE($1, title),
+        field_key = COALESCE($2, field_key),
+        config_json = COALESCE($3, config_json)
+    WHERE id = $4
+  `, [title, field_key, config ? JSON.stringify(config) : null, req.params.id]);
+
+  const updated = await db.get("SELECT * FROM dashboard_widgets WHERE id = $1", [req.params.id]);
+  res.json({ message: "Widget updated.", widget: updated });
+});
+
 router.delete("/widgets/:id", authenticateToken, async (req, res) => {
   await db.run("DELETE FROM dashboard_widgets WHERE id = $1", [req.params.id]);
   res.json({ message: "Widget removed." });

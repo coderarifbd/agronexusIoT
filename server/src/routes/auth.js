@@ -27,8 +27,8 @@ async function generateNextUserId() {
 router.post("/register", rateLimiter(10, 60000), async (req, res) => {
   const { name, username, email, password, passkey } = req.body;
 
-  if (!name || !username || !email || !password || !passkey) {
-    return res.status(400).json({ error: "All fields are required (Name, Username, Email, Password, Master Passkey)." });
+  if (!name || !username || !email || !password) {
+    return res.status(400).json({ error: "All fields are required (Name, Username, Email, Password)." });
   }
 
   const existing = await db.get("SELECT id FROM users WHERE username = $1 OR email = $2", [username, email]);
@@ -39,7 +39,7 @@ router.post("/register", rateLimiter(10, 60000), async (req, res) => {
   const userId = uuidv4();
   const userIdCode = await generateNextUserId();
   const passwordHash = bcrypt.hashSync(password, 10);
-  const passkeyHash = bcrypt.hashSync(passkey, 10);
+  const passkeyHash = passkey ? bcrypt.hashSync(passkey, 10) : passwordHash;
 
   await db.run(`
     INSERT INTO users (id, user_id_code, name, username, email, password_hash, passkey_hash)
@@ -94,7 +94,7 @@ router.post("/login", rateLimiter(20, 60000), async (req, res) => {
   );
 
   res.json({
-    message: "Login successful. Master Passkey required for secure operations.",
+    message: "Login successful.",
     token,
     user: {
       id: user.id,
@@ -108,23 +108,10 @@ router.post("/login", rateLimiter(20, 60000), async (req, res) => {
   });
 });
 
-// Verify Master Passkey
+// Verify Master Passkey (Maintained as always true for backward compatibility)
 router.post("/verify-passkey", authenticateToken, async (req, res) => {
-  const { passkey } = req.body;
-
-  if (!passkey) {
-    return res.status(400).json({ error: "Master Passkey is required." });
-  }
-
-  const user = await db.get("SELECT passkey_hash FROM users WHERE id = $1", [req.user.id]);
-  if (!user || !bcrypt.compareSync(passkey, user.passkey_hash)) {
-    return res.status(403).json({ error: "Incorrect Master Passkey. Access denied." });
-  }
-
-  passkeySessions.set(req.user.id, Date.now());
-
   res.json({
-    message: "Master Passkey verified. Dashboard & critical controls unlocked.",
+    message: "Access granted.",
     unlocked: true,
     expiresInMs: CONFIG.PASSKEY_SESSION_DURATION_MS
   });
@@ -132,19 +119,14 @@ router.post("/verify-passkey", authenticateToken, async (req, res) => {
 
 // Check Passkey Status
 router.get("/passkey-status", authenticateToken, (req, res) => {
-  const lastUnlock = passkeySessions.get(req.user.id);
-  const now = Date.now();
-  const isUnlocked = !!(lastUnlock && (now - lastUnlock < CONFIG.PASSKEY_SESSION_DURATION_MS));
-
   res.json({
-    unlocked: isUnlocked,
-    remainingMs: isUnlocked ? (CONFIG.PASSKEY_SESSION_DURATION_MS - (now - lastUnlock)) : 0
+    unlocked: true,
+    remainingMs: 99999999
   });
 });
 
 router.post("/lock-passkey", authenticateToken, (req, res) => {
-  passkeySessions.delete(req.user.id);
-  res.json({ message: "Dashboard locked." });
+  res.json({ message: "Dashboard unlocked." });
 });
 
 router.get("/profile", authenticateToken, async (req, res) => {
@@ -175,23 +157,6 @@ router.put("/change-password", authenticateToken, async (req, res) => {
   await db.run("UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2", [newHash, req.user.id]);
 
   res.json({ message: "Password updated successfully." });
-});
-
-router.put("/change-passkey", authenticateToken, async (req, res) => {
-  const { currentPasskey, newPasskey } = req.body;
-  if (!currentPasskey || !newPasskey) {
-    return res.status(400).json({ error: "Current passkey and new passkey are required." });
-  }
-
-  const user = await db.get("SELECT passkey_hash FROM users WHERE id = $1", [req.user.id]);
-  if (!bcrypt.compareSync(currentPasskey, user.passkey_hash)) {
-    return res.status(400).json({ error: "Current master passkey is incorrect." });
-  }
-
-  const newHash = bcrypt.hashSync(newPasskey, 10);
-  await db.run("UPDATE users SET passkey_hash = $1, updated_at = NOW() WHERE id = $2", [newHash, req.user.id]);
-
-  res.json({ message: "Master passkey updated successfully." });
 });
 
 router.get("/login-history", authenticateToken, async (req, res) => {

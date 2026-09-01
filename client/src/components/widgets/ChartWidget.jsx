@@ -14,9 +14,11 @@ import {
   Legend
 } from "recharts";
 import { api } from "../../services/api";
-import { Maximize2, RefreshCw } from "lucide-react";
+import { useTheme } from "../../context/ThemeContext";
+import { RefreshCw } from "lucide-react";
 
 export function ChartWidget({ title, channelId, fields = [], chartType = "line" }) {
+  const { isDark } = useTheme();
   const [range, setRange] = useState("24h");
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -44,6 +46,11 @@ export function ChartWidget({ title, channelId, fields = [], chartType = "line" 
   }
 
   const colorPalette = ["#10B981", "#3B82F6", "#F59E0B", "#8B5CF6", "#EC4899", "#06B6D4"];
+  const gridStroke = isDark ? "#1f293d" : "#e2e8f0";
+  const axisStroke = isDark ? "#64748b" : "#94a3b8";
+  const tooltipStyle = isDark
+    ? { backgroundColor: "#0f172a", borderColor: "#334155", color: "#f8fafc", borderRadius: "12px", fontSize: "12px" }
+    : { backgroundColor: "#ffffff", borderColor: "#e2e8f0", color: "#0f172a", borderRadius: "12px", fontSize: "12px", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)" };
 
   const renderChart = () => {
     if (chartType === "area") {
@@ -60,10 +67,10 @@ export function ChartWidget({ title, channelId, fields = [], chartType = "line" 
               );
             })}
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" />
-          <XAxis dataKey="formattedTime" stroke="#64748b" fontSize={11} />
-          <YAxis stroke="#64748b" fontSize={11} domain={["auto", "auto"]} />
-          <Tooltip contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "8px", fontSize: "12px" }} />
+          <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+          <XAxis dataKey="formattedTime" stroke={axisStroke} fontSize={11} />
+          <YAxis stroke={axisStroke} fontSize={11} domain={["auto", "auto"]} />
+          <Tooltip contentStyle={tooltipStyle} />
           <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
           {fields.map((f, idx) => (
             <Area
@@ -83,10 +90,10 @@ export function ChartWidget({ title, channelId, fields = [], chartType = "line" 
     if (chartType === "bar") {
       return (
         <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" />
-          <XAxis dataKey="formattedTime" stroke="#64748b" fontSize={11} />
-          <YAxis stroke="#64748b" fontSize={11} />
-          <Tooltip contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "8px", fontSize: "12px" }} />
+          <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+          <XAxis dataKey="formattedTime" stroke={axisStroke} fontSize={11} />
+          <YAxis stroke={axisStroke} fontSize={11} />
+          <Tooltip contentStyle={tooltipStyle} />
           <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
           {fields.map((f, idx) => (
             <Bar
@@ -104,10 +111,10 @@ export function ChartWidget({ title, channelId, fields = [], chartType = "line" 
     // Default Line
     return (
       <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" />
-        <XAxis dataKey="formattedTime" stroke="#64748b" fontSize={11} />
-        <YAxis stroke="#64748b" fontSize={11} domain={["auto", "auto"]} />
-        <Tooltip contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "8px", fontSize: "12px" }} />
+        <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+        <XAxis dataKey="formattedTime" stroke={axisStroke} fontSize={11} />
+        <YAxis stroke={axisStroke} fontSize={11} domain={["auto", "auto"]} />
+        <Tooltip contentStyle={tooltipStyle} />
         <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
         {fields.map((f, idx) => (
           <Line
@@ -126,25 +133,25 @@ export function ChartWidget({ title, channelId, fields = [], chartType = "line" 
   };
 
   return (
-    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col h-full">
+    <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col h-full shadow-sm dark:shadow-md transition-colors">
       {/* Header with Time filter */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div>
-          <h4 className="text-sm font-bold text-white tracking-tight">{title}</h4>
-          <span className="text-[11px] text-slate-500 font-mono">
+          <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">{title}</h4>
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">
             {data.length} telemetry points ({range})
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
           {["1h", "6h", "24h", "7d", "30d"].map((r) => (
             <button
               key={r}
               onClick={() => setRange(r)}
               className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
                 range === r
-                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-emerald-500 text-white dark:bg-emerald-500/20 dark:text-emerald-400 dark:border dark:border-emerald-500/40 shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               {r.toUpperCase()}
@@ -153,7 +160,7 @@ export function ChartWidget({ title, channelId, fields = [], chartType = "line" 
           <button
             onClick={fetchHistorical}
             title="Refresh Data"
-            className={`p-1.5 text-slate-400 hover:text-emerald-400 rounded-lg transition-colors ${loading ? "animate-spin text-emerald-400" : ""}`}
+            className={`p-1.5 text-slate-400 hover:text-emerald-500 rounded-lg transition-colors ${loading ? "animate-spin text-emerald-500" : ""}`}
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
@@ -163,7 +170,7 @@ export function ChartWidget({ title, channelId, fields = [], chartType = "line" 
       {/* Chart Canvas */}
       <div className="flex-1 w-full min-h-[220px]">
         {data.length === 0 && !loading ? (
-          <div className="h-full flex items-center justify-center text-xs text-slate-500 font-mono">
+          <div className="h-full flex items-center justify-center text-xs text-slate-400 dark:text-slate-500 font-mono">
             No telemetry recorded in this timeframe.
           </div>
         ) : (
