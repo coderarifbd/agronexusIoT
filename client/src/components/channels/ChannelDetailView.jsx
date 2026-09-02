@@ -476,8 +476,8 @@ export function ChannelDetailView({ channelId, onBack }) {
             <span>Entries: <strong className="font-mono text-slate-800 dark:text-slate-200">{stats.entries}</strong></span>
           </div>
 
-          {/* Grid of Individual Field Charts (2 Columns) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Channel Dashboard Visualizations & Widgets Grid (2 Columns, Side-by-Side) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             {fields.map((f, i) => (
               <SingleFieldChart
                 key={f.id || f.field_key || i}
@@ -487,37 +487,28 @@ export function ChannelDetailView({ channelId, onBack }) {
                 onDelete={handleDeleteField}
               />
             ))}
+            {widgets.map((w) => (
+              <ThingSpeakWidgetRenderer
+                key={w.id}
+                widget={w}
+                channel={ch}
+                currentValues={channelData.currentValues}
+                onEdit={(selectedW) => {
+                  setEditingWidget(selectedW);
+                  setShowAddWidgetModal(true);
+                }}
+                onDelete={handleDeleteWidget}
+              />
+            ))}
           </div>
-
-          {/* Render Channel Widgets */}
-          {widgets.length > 0 && (
-            <div className="space-y-2 pt-1">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Channel Widgets</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {widgets.map((w) => (
-                  <ThingSpeakWidgetRenderer
-                    key={w.id}
-                    widget={w}
-                    channel={ch}
-                    currentValues={channelData.currentValues}
-                    onEdit={(selectedW) => {
-                      setEditingWidget(selectedW);
-                      setShowAddWidgetModal(true);
-                    }}
-                    onDelete={handleDeleteWidget}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Slim Sleek Add Visualization Bar */}
           <div
             onClick={handleAddCustomField}
-            className="border border-dashed border-slate-300 dark:border-slate-700 hover:border-[#137f3a] dark:hover:border-emerald-500 rounded-lg py-3 px-4 text-center cursor-pointer transition-colors bg-white/50 dark:bg-slate-900/50"
+            className="border border-dashed border-slate-300 dark:border-slate-700 hover:border-[#137f3a] dark:hover:border-emerald-500 rounded-lg py-2.5 px-4 text-center cursor-pointer transition-colors bg-white/50 dark:bg-slate-900/50"
           >
             <button className="text-[#137f3a] dark:text-emerald-400 font-semibold text-xs flex items-center justify-center gap-1.5 mx-auto cursor-pointer">
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               <span>+ Add Field Visualization</span>
             </button>
           </div>
@@ -527,22 +518,23 @@ export function ChannelDetailView({ channelId, onBack }) {
       {/* 5. Tab 2: Public View */}
       {activeTab === "public" && (
         <div className="space-y-4 pt-1">
-          <div className="flex items-center justify-between p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 rounded-lg text-sm">
+          <div className="flex items-center justify-between p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 rounded-lg text-sm">
             <div className="flex items-center gap-2.5">
-              <Globe className="w-5 h-5 text-[#137f3a] dark:text-emerald-400" />
-              <span className="font-medium text-emerald-800 dark:text-emerald-300">
+              <Globe className="w-4 h-4 text-[#137f3a] dark:text-emerald-400" />
+              <span className="font-medium text-xs sm:text-sm text-emerald-800 dark:text-emerald-300 truncate">
                 Public Stream URL: {originUrl}/dashboard/public/{ch.public_slug || ch.id}
               </span>
             </div>
             <button
               onClick={() => handleCopy(`${originUrl}/dashboard/public/${ch.public_slug || ch.id}`, "publicUrl")}
-              className="px-3.5 py-1.5 bg-[#137f3a] text-white rounded text-xs font-bold cursor-pointer"
+              className="px-3 py-1 bg-[#137f3a] text-white rounded text-xs font-bold cursor-pointer shrink-0"
             >
               {copiedKey === "publicUrl" ? "Copied!" : "Copy Public URL"}
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Unified Public View Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             {fields.map((f, i) => (
               <SingleFieldChart
                 key={f.id || f.field_key || i}
@@ -551,29 +543,20 @@ export function ChannelDetailView({ channelId, onBack }) {
                 fieldIndex={i}
               />
             ))}
+            {widgets.map((w) => (
+              <ThingSpeakWidgetRenderer
+                key={w.id}
+                widget={w}
+                channel={ch}
+                currentValues={channelData.currentValues}
+                onEdit={(selectedW) => {
+                  setEditingWidget(selectedW);
+                  setShowAddWidgetModal(true);
+                }}
+                onDelete={handleDeleteWidget}
+              />
+            ))}
           </div>
-
-          {/* Render Channel Widgets in Public View */}
-          {widgets.length > 0 && (
-            <div className="space-y-2 pt-1">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Channel Widgets</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {widgets.map((w) => (
-                  <ThingSpeakWidgetRenderer
-                    key={w.id}
-                    widget={w}
-                    channel={ch}
-                    currentValues={channelData.currentValues}
-                    onEdit={(selectedW) => {
-                      setEditingWidget(selectedW);
-                      setShowAddWidgetModal(true);
-                    }}
-                    onDelete={handleDeleteWidget}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 

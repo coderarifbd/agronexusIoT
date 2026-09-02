@@ -130,12 +130,12 @@ export function SingleFieldChart({
   return (
     <div
       style={{ backgroundColor: bgColor }}
-      className="border border-slate-300 dark:border-slate-800 rounded shadow-sm overflow-hidden flex flex-col h-[350px] transition-colors"
+      className="border border-slate-300 dark:border-slate-800 rounded shadow-sm overflow-hidden flex flex-col h-[275px] transition-colors"
     >
       {/* Top Header Bar (Matches Image with 4 Action Icons) */}
-      <div className="bg-[#2a75a0] dark:bg-slate-800 text-white px-3 py-1.5 flex items-center justify-between text-xs font-semibold select-none">
+      <div className="bg-[#2a75a0] dark:bg-slate-800 text-white px-3 py-1.5 flex items-center justify-between text-xs font-semibold select-none shrink-0">
         <span className="truncate">{headerTitle}</span>
-        <div className="flex items-center gap-2.5 text-white/90">
+        <div className="flex items-center gap-2 text-white/90">
           <button
             onClick={() => window.open(`/dashboard/public/${channel.public_slug || channel.id}`, "_blank")}
             title="Open in new window"
@@ -170,23 +170,23 @@ export function SingleFieldChart({
       </div>
 
       {/* Sub Title Strip */}
-      <div className="px-3 pt-2 text-center">
-        <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
+      <div className="px-3 pt-1 text-center shrink-0">
+        <span className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
           {channel.name || `Channel ${channel.channel_number || channel.id}`}
         </span>
       </div>
 
       {/* Main Chart Body */}
-      <div className="flex-1 w-full px-2 pb-1 relative min-h-0">
-        <ResponsiveContainer width="100%" height="90%">
+      <div className="flex-1 w-full px-1.5 pb-1 relative min-h-0">
+        <ResponsiveContainer width="100%" height="100%">
           {chartOptions.chartType === "bar" || chartOptions.chartType === "column" ? (
             <BarChart
               data={data.length > 0 ? data : [{ time: "Now", value: 0 }]}
-              margin={{ top: 10, right: 15, left: -10, bottom: 20 }}
+              margin={{ top: 6, right: 12, left: -15, bottom: 6 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#1e293b" : "#e2e8f0"} vertical={false} />
-              <XAxis dataKey="time" stroke={isDark ? "#64748b" : "#94a3b8"} fontSize={10} tickLine={false} />
-              <YAxis stroke={isDark ? "#64748b" : "#94a3b8"} fontSize={10} tickLine={false} domain={yDomain} />
+              <XAxis dataKey="time" stroke={isDark ? "#64748b" : "#94a3b8"} fontSize={9} tickLine={false} />
+              <YAxis stroke={isDark ? "#64748b" : "#94a3b8"} fontSize={9} tickLine={false} domain={yDomain} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: isDark ? "#0f172a" : "#ffffff",
@@ -200,11 +200,11 @@ export function SingleFieldChart({
           ) : chartOptions.chartType === "area" ? (
             <AreaChart
               data={data.length > 0 ? data : [{ time: "Now", value: 0 }]}
-              margin={{ top: 10, right: 15, left: -10, bottom: 20 }}
+              margin={{ top: 6, right: 12, left: -15, bottom: 6 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#1e293b" : "#e2e8f0"} vertical={false} />
-              <XAxis dataKey="time" stroke={isDark ? "#64748b" : "#94a3b8"} fontSize={10} tickLine={false} />
-              <YAxis stroke={isDark ? "#64748b" : "#94a3b8"} fontSize={10} tickLine={false} domain={yDomain} />
+              <XAxis dataKey="time" stroke={isDark ? "#64748b" : "#94a3b8"} fontSize={9} tickLine={false} />
+              <YAxis stroke={isDark ? "#64748b" : "#94a3b8"} fontSize={9} tickLine={false} domain={yDomain} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: isDark ? "#0f172a" : "#ffffff",
@@ -218,7 +218,7 @@ export function SingleFieldChart({
           ) : (
             <LineChart
               data={data.length > 0 ? data : [{ time: "Now", value: 0 }]}
-              margin={{ top: 10, right: 15, left: -10, bottom: 20 }}
+              margin={{ top: 6, right: 12, left: -15, bottom: 6 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#1e293b" : "#e2e8f0"} vertical={false} />
               <XAxis

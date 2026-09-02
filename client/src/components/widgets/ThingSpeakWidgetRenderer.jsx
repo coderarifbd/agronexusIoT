@@ -119,8 +119,8 @@ export function ThingSpeakWidgetRenderer({ widget, channel, currentValues = {}, 
     const outerArcPath = `M ${oStart.x} ${oStart.y} A ${outerR} ${outerR} 0 1 1 ${oEnd.x} ${oEnd.y}`;
 
     return (
-      <div className="flex flex-col items-center justify-center p-3">
-        <div className="relative w-60 h-60 flex items-center justify-center">
+      <div className="flex flex-col items-center justify-center p-2">
+        <div className="relative w-44 h-44 flex items-center justify-center">
           <svg viewBox="0 0 200 200" className="w-full h-full select-none">
             {/* Outer faint bezel outline */}
             <path
@@ -225,9 +225,9 @@ export function ThingSpeakWidgetRenderer({ widget, channel, currentValues = {}, 
           </svg>
         </div>
 
-        {/* Digital Readout below dial (Guaranteed NO NaN) */}
+        {/* Digital Readout below dial */}
         {displayValue && (
-          <div className="text-center font-sans font-semibold text-lg text-slate-800 dark:text-white mt-1">
+          <div className="text-center font-sans font-semibold text-base text-slate-800 dark:text-white -mt-2">
             <span>{Number(num.toFixed(1))}</span>
             {unit && <span className="ml-1 text-xs font-normal text-slate-500">{unit}</span>}
           </div>
@@ -239,14 +239,14 @@ export function ThingSpeakWidgetRenderer({ widget, channel, currentValues = {}, 
   // Render Numeric Display
   function renderNumeric() {
     return (
-      <div className="flex flex-col items-center justify-center p-8 h-48">
-        <div className="border-2 border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-lg px-8 py-4 shadow-inner">
+      <div className="flex flex-col items-center justify-center p-4">
+        <div className="border-2 border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-lg px-6 py-3 shadow-inner">
           <span className="font-mono text-3xl sm:text-4xl font-bold text-slate-800 dark:text-slate-100 tracking-wider">
             {Number(num.toFixed(1))}
           </span>
         </div>
         {unit && (
-          <span className="text-sm font-mono text-slate-500 dark:text-slate-400 mt-2 uppercase tracking-widest font-semibold">
+          <span className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-2 uppercase tracking-widest font-semibold">
             {unit}
           </span>
         )}
@@ -264,23 +264,23 @@ export function ThingSpeakWidgetRenderer({ widget, channel, currentValues = {}, 
     else isLit = num > 0;
 
     return (
-      <div className="flex flex-col items-center justify-center p-6 h-48">
+      <div className="flex flex-col items-center justify-center p-3">
         <div
-          className={`w-28 h-28 rounded-full border-4 transition-all duration-500 flex items-center justify-center shadow-lg ${
+          className={`w-20 h-20 rounded-full border-4 transition-all duration-500 flex items-center justify-center shadow-lg ${
             isLit
               ? "border-emerald-400 bg-gradient-to-tr from-emerald-500 via-emerald-400 to-teal-300 shadow-emerald-500/50"
               : "border-slate-300 dark:border-slate-700 bg-gradient-to-b from-white via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-800 dark:to-slate-900"
           }`}
         >
           <div
-            className={`w-18 h-18 rounded-full border transition-all ${
+            className={`w-12 h-12 rounded-full border transition-all ${
               isLit
                 ? "border-emerald-200 bg-white/40 animate-pulse"
                 : "border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800"
             }`}
           />
         </div>
-        <div className="mt-3 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+        <div className="mt-2 text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
           Status: <span className={isLit ? "text-emerald-600 dark:text-emerald-400" : "text-slate-500"}>{isLit ? "ON / ACTIVE" : "OFF / IDLE"}</span>
         </div>
       </div>
@@ -291,23 +291,23 @@ export function ThingSpeakWidgetRenderer({ widget, channel, currentValues = {}, 
   function renderImage() {
     const src = config.imageUrl || "https://images.unsplash.com/photo-1586771107445-d3ca888129ff?w=600&auto=format&fit=crop&q=80";
     return (
-      <div className="p-4 flex flex-col items-center justify-center">
+      <div className="p-2 flex flex-col items-center justify-center">
         <img
           src={src}
           alt={widget.title}
-          className="max-h-48 rounded border border-slate-200 dark:border-slate-800 object-cover shadow-sm"
+          className="max-h-36 rounded border border-slate-200 dark:border-slate-800 object-cover shadow-sm"
         />
-        <div className="mt-2 text-xs font-mono text-slate-500">Live Channel Stream</div>
+        <div className="mt-1 text-[10px] font-mono text-slate-500">Live Channel Stream</div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded shadow-sm overflow-hidden flex flex-col transition-colors">
+    <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded shadow-sm overflow-hidden flex flex-col h-[275px] transition-colors">
       {/* Widget Top Header Banner (Matches media_1788288005556.png) */}
-      <div className="bg-[#2a75a0] text-white px-3 py-1.5 flex items-center justify-between text-xs font-semibold select-none">
+      <div className="bg-[#2a75a0] text-white px-3 py-1.5 flex items-center justify-between text-xs font-semibold select-none shrink-0">
         <span className="truncate">{widget.title || "Field 1 Gauge"}</span>
-        <div className="flex items-center gap-2.5 text-white/90">
+        <div className="flex items-center gap-2 text-white/90">
           <button
             onClick={() => window.open(`/dashboard/public/${channel.public_slug || channel.id}`, "_blank")}
             title="Open in new window"
@@ -344,7 +344,7 @@ export function ThingSpeakWidgetRenderer({ widget, channel, currentValues = {}, 
       </div>
 
       {/* Widget Content Body */}
-      <div className="bg-white dark:bg-slate-900 flex-1 flex items-center justify-center">
+      <div className="bg-white dark:bg-slate-900 flex-1 flex items-center justify-center min-h-0">
         {widget.widget_type === "gauge" && renderGauge()}
         {widget.widget_type === "numeric" && renderNumeric()}
         {widget.widget_type === "lamp" && renderLamp()}
@@ -352,7 +352,7 @@ export function ThingSpeakWidgetRenderer({ widget, channel, currentValues = {}, 
       </div>
 
       {/* AgroNexus.io Watermark Footer */}
-      <div className="px-3 py-1 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+      <div className="px-3 py-1 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400 font-mono shrink-0">
         <span>Field: {widget.field_key || "field1"}</span>
         <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-sans">AgroNexus.io</span>
       </div>
