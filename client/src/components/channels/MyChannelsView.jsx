@@ -366,28 +366,27 @@ if __name__ == "__main__":
           </div>
 
           {/* Action Bar: New Channel Button + Search Input */}
-          <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <button
               onClick={() => setViewMode("create")}
-              className="px-6 py-2.5 bg-[#137f3a] hover:bg-[#0f682f] text-white text-sm font-semibold rounded-md shadow transition-all flex items-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto px-6 py-2.5 bg-[#137f3a] hover:bg-[#0f682f] text-white text-sm font-semibold rounded-md shadow transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
+              <Plus className="w-4 h-4" />
               <span>New Channel</span>
             </button>
 
             {/* Search Box */}
-            <div className="flex items-center">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search by tag or name"
-                  className="w-64 sm:w-80 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-l-md px-3.5 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#137f3a]"
-                />
-              </div>
+            <div className="flex items-center w-full sm:w-auto">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by tag or name"
+                className="flex-1 sm:w-72 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-l-md px-3.5 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#137f3a]"
+              />
               <button
                 type="button"
-                className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-l-0 border-slate-300 dark:border-slate-700 rounded-r-md text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-l-0 border-slate-300 dark:border-slate-700 rounded-r-md text-slate-600 dark:text-slate-300 transition-colors cursor-pointer shrink-0"
               >
                 <Search className="w-4 h-4" />
               </button>

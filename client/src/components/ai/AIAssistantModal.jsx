@@ -79,28 +79,28 @@ export function AIAssistantModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl flex flex-col h-[640px] overflow-hidden transition-colors">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-md animate-fadeIn">
+      <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl flex flex-col h-[88vh] max-h-[640px] overflow-hidden transition-colors">
         {/* Header */}
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950/60">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center text-white shadow-md shadow-indigo-600/30">
-              <Bot className="w-5 h-5" />
+        <div className="p-3 sm:p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 dark:bg-slate-950/60 shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center text-white shadow-md shadow-indigo-600/30 shrink-0">
+              <Bot className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
+              <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base flex items-center gap-1.5 sm:gap-2">
                 AgroNexus AI Copilot
-                <span className="text-[10px] bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 font-mono px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-500/30">
-                  Bangla & English Supported
+                <span className="text-[9px] sm:text-[10px] bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 font-mono px-1.5 sm:px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-500/30">
+                  AI
                 </span>
               </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400">
                 Channel: <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{activeChannel?.name || "Global Stream"}</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between sm:justify-end gap-2">
             {/* Tabs */}
             <div className="flex items-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 text-xs">
               <button

@@ -165,11 +165,11 @@ export function NewChannelView({ onBack, onChannelCreated }) {
 
           <form onSubmit={handleSubmit} className="space-y-4 text-sm">
             {/* Name */}
-            <div className="grid grid-cols-12 gap-3 items-center">
-              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 sm:gap-3 items-start sm:items-center">
+              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
                 Name
               </label>
-              <div className="col-span-9">
+              <div className="sm:col-span-9">
                 <input
                   type="text"
                   value={name}
@@ -181,11 +181,11 @@ export function NewChannelView({ onBack, onChannelCreated }) {
             </div>
 
             {/* Description */}
-            <div className="grid grid-cols-12 gap-3 items-start">
-              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 sm:gap-3 items-start">
+              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300 pt-1 sm:pt-2">
                 Description
               </label>
-              <div className="col-span-9">
+              <div className="sm:col-span-9">
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -197,11 +197,11 @@ export function NewChannelView({ onBack, onChannelCreated }) {
 
             {/* Fields 1 - 8 */}
             {fields.map((f, idx) => (
-              <div key={f.id} className="grid grid-cols-12 gap-3 items-center">
-                <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
+              <div key={f.id} className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 sm:gap-3 items-start sm:items-center">
+                <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
                   Field {f.id}
                 </label>
-                <div className="col-span-9 flex items-center gap-3">
+                <div className="sm:col-span-9 flex items-center gap-3">
                   <input
                     type="text"
                     value={f.name}
@@ -225,11 +225,11 @@ export function NewChannelView({ onBack, onChannelCreated }) {
             ))}
 
             {/* Metadata */}
-            <div className="grid grid-cols-12 gap-3 items-start pt-2">
-              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 sm:gap-3 items-start pt-1 sm:pt-2">
+              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300 pt-1 sm:pt-2">
                 Metadata
               </label>
-              <div className="col-span-9">
+              <div className="sm:col-span-9">
                 <textarea
                   value={metadata}
                   onChange={(e) => setMetadata(e.target.value)}
@@ -240,16 +240,16 @@ export function NewChannelView({ onBack, onChannelCreated }) {
             </div>
 
             {/* Tags */}
-            <div className="grid grid-cols-12 gap-3 items-start">
-              <div className="col-span-3 text-right">
-                <label className="block font-medium text-slate-700 dark:text-slate-300 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 sm:gap-3 items-start">
+              <div className="sm:col-span-3 sm:text-right">
+                <label className="block font-medium text-slate-700 dark:text-slate-300 pt-1 sm:pt-2">
                   Tags
                 </label>
                 <span className="text-xs text-slate-400 dark:text-slate-500 block leading-tight">
                   (Tags are comma separated)
                 </span>
               </div>
-              <div className="col-span-9">
+              <div className="sm:col-span-9">
                 <textarea
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
@@ -260,11 +260,11 @@ export function NewChannelView({ onBack, onChannelCreated }) {
             </div>
 
             {/* Link to External Site */}
-            <div className="grid grid-cols-12 gap-3 items-center">
-              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 sm:gap-3 items-start sm:items-center">
+              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
                 Link to External Site
               </label>
-              <div className="col-span-9">
+              <div className="sm:col-span-9">
                 <input
                   type="text"
                   value={externalUrl}
@@ -276,11 +276,11 @@ export function NewChannelView({ onBack, onChannelCreated }) {
             </div>
 
             {/* Link to GitHub */}
-            <div className="grid grid-cols-12 gap-3 items-center">
-              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 sm:gap-3 items-start sm:items-center">
+              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
                 Link to GitHub
               </label>
-              <div className="col-span-9">
+              <div className="sm:col-span-9">
                 <input
                   type="text"
                   value={githubUrl}
@@ -292,11 +292,11 @@ export function NewChannelView({ onBack, onChannelCreated }) {
             </div>
 
             {/* Elevation */}
-            <div className="grid grid-cols-12 gap-3 items-center">
-              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 sm:gap-3 items-start sm:items-center">
+              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
                 Elevation
               </label>
-              <div className="col-span-9">
+              <div className="sm:col-span-9">
                 <input
                   type="text"
                   value={elevation}
@@ -307,11 +307,11 @@ export function NewChannelView({ onBack, onChannelCreated }) {
             </div>
 
             {/* Show Channel Location */}
-            <div className="grid grid-cols-12 gap-3 items-center">
-              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 sm:gap-3 items-center">
+              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
                 Show Channel Location
               </label>
-              <div className="col-span-9">
+              <div className="sm:col-span-9">
                 <input
                   type="checkbox"
                   checked={showLocation}
@@ -322,11 +322,11 @@ export function NewChannelView({ onBack, onChannelCreated }) {
             </div>
 
             {/* Latitude & Longitude */}
-            <div className="grid grid-cols-12 gap-3 items-center">
-              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 sm:gap-3 items-start sm:items-center">
+              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
                 Latitude
               </label>
-              <div className="col-span-9">
+              <div className="sm:col-span-9">
                 <input
                   type="text"
                   value={latitude}
@@ -342,11 +342,11 @@ export function NewChannelView({ onBack, onChannelCreated }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-12 gap-3 items-center">
-              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 sm:gap-3 items-start sm:items-center">
+              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
                 Longitude
               </label>
-              <div className="col-span-9">
+              <div className="sm:col-span-9">
                 <input
                   type="text"
                   value={longitude}
@@ -363,11 +363,11 @@ export function NewChannelView({ onBack, onChannelCreated }) {
             </div>
 
             {/* Show Video */}
-            <div className="grid grid-cols-12 gap-3 items-center">
-              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 sm:gap-3 items-start sm:items-center">
+              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
                 Show Video
               </label>
-              <div className="col-span-9 space-y-2">
+              <div className="sm:col-span-9 space-y-2">
                 <input
                   type="checkbox"
                   checked={showVideo}
@@ -405,11 +405,11 @@ export function NewChannelView({ onBack, onChannelCreated }) {
             </div>
 
             {/* Video URL */}
-            <div className="grid grid-cols-12 gap-3 items-center">
-              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 sm:gap-3 items-start sm:items-center">
+              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
                 Video URL
               </label>
-              <div className="col-span-9">
+              <div className="sm:col-span-9">
                 <input
                   type="text"
                   value={videoUrl}
@@ -426,11 +426,11 @@ export function NewChannelView({ onBack, onChannelCreated }) {
             </div>
 
             {/* Show Status */}
-            <div className="grid grid-cols-12 gap-3 items-center">
-              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 sm:gap-3 items-center">
+              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
                 Show Status
               </label>
-              <div className="col-span-9">
+              <div className="sm:col-span-9">
                 <input
                   type="checkbox"
                   checked={showStatus}
@@ -441,13 +441,13 @@ export function NewChannelView({ onBack, onChannelCreated }) {
             </div>
 
             {/* Save Channel Button */}
-            <div className="grid grid-cols-12 gap-3 pt-3">
-              <div className="col-span-3"></div>
-              <div className="col-span-9">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 sm:gap-3 pt-3">
+              <div className="sm:col-span-3"></div>
+              <div className="sm:col-span-9">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-7 py-2.5 bg-[#137f3a] hover:bg-[#0f682f] text-white font-semibold text-sm rounded shadow transition-all flex items-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto px-7 py-2.5 bg-[#137f3a] hover:bg-[#0f682f] text-white font-semibold text-sm rounded shadow transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Check className="w-4 h-4" />
                   <span>{loading ? "Saving..." : "Save Channel"}</span>

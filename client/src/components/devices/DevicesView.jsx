@@ -145,7 +145,7 @@ void loop() {
       </div>
 
       {/* Device Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {devices.map((dev) => {
           const isSelected = selectedDevice?.id === dev.id;
           const isOnline = dev.status === "online";
@@ -305,8 +305,8 @@ void loop() {
 
       {/* Register Device Modal */}
       {showRegisterModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-md max-h-[92vh] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-2xl overflow-y-auto">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Register New IoT Microcontroller</h3>
             <form onSubmit={handleRegister} className="space-y-4">
               <div>

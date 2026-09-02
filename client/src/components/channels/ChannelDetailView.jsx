@@ -391,8 +391,8 @@ export function ChannelDetailView({ channelId, onBack }) {
       </div>
 
       {/* 2. Channel Sub-Navigation Tabs Bar */}
-      <div className="border-b border-slate-200 dark:border-slate-700">
-        <nav className="flex flex-wrap gap-1 -mb-px text-sm font-semibold">
+      <div className="border-b border-slate-200 dark:border-slate-700 overflow-x-auto scrollbar-none">
+        <nav className="flex items-center gap-1 -mb-px text-xs sm:text-sm font-semibold whitespace-nowrap min-w-max pb-0.5">
           {[
             { id: "private", label: "Private View" },
             { id: "public", label: "Public View" },
@@ -406,7 +406,7 @@ export function ChannelDetailView({ channelId, onBack }) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-2.5 px-5 rounded-t border transition-all cursor-pointer ${
+                className={`py-2 sm:py-2.5 px-3.5 sm:px-5 shrink-0 rounded-t border transition-all cursor-pointer ${
                   isActive
                     ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-300 dark:border-slate-700 border-b-white dark:border-b-slate-900 shadow-sm"
                     : "text-[#137f3a] dark:text-emerald-400 hover:text-[#0f682f] border-transparent"
@@ -423,53 +423,47 @@ export function ChannelDetailView({ channelId, onBack }) {
       {(activeTab === "private" || activeTab === "public") && (
         <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
           {/* Left Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2.5 text-sm">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 text-xs sm:text-sm">
             <button
               onClick={handleAddCustomField}
-              className="px-3.5 py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-[#137f3a] dark:text-emerald-400 font-semibold rounded border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+              className="px-3 sm:px-3.5 py-1.5 sm:py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-[#137f3a] dark:text-emerald-400 font-semibold rounded border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span>Add Visualizations</span>
             </button>
 
             <button
               onClick={() => setShowAddWidgetModal(true)}
-              className="px-3.5 py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-[#137f3a] dark:text-emerald-400 font-semibold rounded border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+              className="px-3 sm:px-3.5 py-1.5 sm:py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-[#137f3a] dark:text-emerald-400 font-semibold rounded border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span>Add Widgets</span>
             </button>
 
             <button
               onClick={handleDownloadExportCsv}
-              className="px-3.5 py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-[#137f3a] dark:text-emerald-400 font-semibold rounded border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+              className="px-3 sm:px-3.5 py-1.5 sm:py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-[#137f3a] dark:text-emerald-400 font-semibold rounded border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
             >
-              <ExternalLink className="w-4 h-4" />
+              <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span>Export recent data</span>
             </button>
           </div>
 
           {/* Right Action Buttons */}
-          <div className="flex items-center gap-2.5 text-sm">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 text-xs sm:text-sm">
             <button
               onClick={() => setShowMatlabModal("analysis")}
-              className="px-4 py-2 bg-[#137f3a] hover:bg-[#0f682f] text-white font-bold rounded shadow transition-all cursor-pointer"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[#137f3a] hover:bg-[#0f682f] text-white font-bold rounded shadow transition-all cursor-pointer text-xs sm:text-sm"
             >
               MATLAB Analysis
             </button>
 
             <button
               onClick={() => setShowMatlabModal("visualization")}
-              className="px-4 py-2 bg-[#137f3a] hover:bg-[#0f682f] text-white font-bold rounded shadow transition-all cursor-pointer"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[#137f3a] hover:bg-[#0f682f] text-white font-bold rounded shadow transition-all cursor-pointer text-xs sm:text-sm"
             >
               MATLAB Visualization
             </button>
-
-            <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 pl-2">
-              <span className="text-xs font-mono">Channel 1 of 1</span>
-              <button className="p-1 hover:text-slate-900 dark:hover:text-white"><ChevronLeft className="w-4 h-4" /></button>
-              <button className="p-1 hover:text-slate-900 dark:hover:text-white"><ChevronRight className="w-4 h-4" /></button>
-            </div>
           </div>
         </div>
       )}

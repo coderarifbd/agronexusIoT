@@ -113,6 +113,8 @@ function MainApp() {
         onOpenAI={() => setShowAI(true)}
         onOpenAlerts={() => setShowAlerts(true)}
         onOpenActivity={() => setShowActivity(true)}
+        currentTab={currentTab}
+        setCurrentTab={setCurrentTab}
       />
 
       {/* Body Area */}
