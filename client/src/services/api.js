@@ -121,7 +121,12 @@ export const api = {
   getPublicDashboard: (slug, password) => request(`/dashboards/public/${slug}${password ? `?password=${encodeURIComponent(password)}` : ""}`),
 
   // AI & Reports
-  askAIAssistant: (query, channelId) => request("/ai/query", { method: "POST", body: JSON.stringify({ query, channelId }) }),
+  askAIAssistant: (query, channelId, conversationHistory = []) => 
+    request("/ai/query", { method: "POST", body: JSON.stringify({ query, channelId, conversationHistory }) }),
+  executeAIAction: (actionData) => 
+    request("/ai/execute-action", { method: "POST", body: JSON.stringify(actionData) }),
+  getAIDailySummary: (projectId) => 
+    request(`/ai/daily-summary${projectId ? `?projectId=${projectId}` : ""}`),
   getAnomalies: (channelId) => request(`/ai/anomalies/${channelId}`),
   getForecast: (channelId) => request(`/ai/forecast/${channelId}`),
   getMonthlyReport: (projectId) => request(`/reports/project/${projectId}/summary`),
