@@ -363,23 +363,11 @@ if __name__ == "__main__":
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Side: My Channels Table & Control (col-span-8 or 9) */}
         <div className="lg:col-span-8 space-y-6">
-          {/* Header Title & Back Button */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              {(onBack || onNavigateToDashboard) && (
-                <button
-                  type="button"
-                  onClick={onBack || onNavigateToDashboard}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 mb-2 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-[#137f3a] dark:hover:border-emerald-500 rounded-lg text-xs font-semibold shadow-sm transition-all cursor-pointer"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5 text-[#137f3a] dark:text-emerald-400" />
-                  <span>Back to Dashboard</span>
-                </button>
-              )}
-              <h1 className="text-3xl sm:text-4xl font-light text-slate-900 dark:text-white tracking-tight">
-                My Channels
-              </h1>
-            </div>
+          {/* Header Title */}
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-light text-slate-900 dark:text-white tracking-tight">
+              My Channels
+            </h1>
           </div>
 
           {/* Action Bar: New Channel Button + Search Input */}

@@ -68,16 +68,6 @@ export function ProfileView({ onBack, onNavigateToDashboard }) {
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 animate-fadeIn transition-colors">
       {/* Header */}
       <div>
-        {handleBack && (
-          <button
-            type="button"
-            onClick={handleBack}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 mb-2 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-emerald-500 rounded-lg text-xs font-semibold transition-all cursor-pointer"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Back to Dashboard</span>
-          </button>
-        )}
         <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
           <UserCheck className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
           User Profile & Security Center
