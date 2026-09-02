@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { api } from "../../services/api";
 import {
   Cpu,
@@ -9,7 +10,8 @@ import {
   Check,
   Trash2,
   Code,
-  ArrowLeft
+  ArrowLeft,
+  X
 } from "lucide-react";
 
 export function DevicesView({ onBack, onNavigateToDashboard }) {
@@ -305,14 +307,28 @@ void loop() {
         </div>
       )}
 
-      {/* Register Device Modal */}
-      {showRegisterModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-md max-h-[92vh] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-2xl overflow-y-auto">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Register New IoT Microcontroller</h3>
-            <form onSubmit={handleRegister} className="space-y-4">
+      {/* Register Device Modal (Portaled to document.body for 100% responsive centered overlay) */}
+      {showRegisterModal && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-fadeIn">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-2xl my-auto">
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-200 dark:border-slate-800">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Cpu className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                <span>Register IoT Microcontroller</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowRegisterModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleRegister} className="space-y-4 text-xs">
               <div>
-                <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Device Name</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Device Name</label>
                 <input
                   type="text"
                   value={deviceName}
@@ -324,11 +340,11 @@ void loop() {
               </div>
 
               <div>
-                <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Device Architecture</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Device Architecture</label>
                 <select
                   value={deviceType}
                   onChange={(e) => setDeviceType(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2 text-sm text-slate-900 dark:text-white focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2 text-sm text-slate-900 dark:text-white focus:outline-none cursor-pointer"
                 >
                   <option value="ESP32">ESP32 (Wi-Fi + BLE)</option>
                   <option value="ESP8266">ESP8266 (NodeMCU)</option>
@@ -338,7 +354,7 @@ void loop() {
               </div>
 
               <div>
-                <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Deployment Location</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Deployment Location</label>
                 <input
                   type="text"
                   value={locationName}
@@ -348,24 +364,25 @@ void loop() {
                 />
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex items-center gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowRegisterModal(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold"
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold"
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 cursor-pointer transition-colors"
                 >
                   Register Device
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
