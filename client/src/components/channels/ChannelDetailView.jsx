@@ -368,29 +368,26 @@ export function ChannelDetailView({ channelId, onBack }) {
   const originUrl = window.location.origin;
 
   return (
-    <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-7 animate-fadeIn transition-colors text-slate-800 dark:text-slate-200 text-sm">
-      {/* 1. Header Information Strip */}
-      <div className="space-y-1.5">
-        <h1 className="text-3xl sm:text-4xl font-light text-slate-900 dark:text-white tracking-tight">
-          {ch.name || `Channel ${channelIdNum}`}
-        </h1>
-        <div className="text-sm text-slate-600 dark:text-slate-400 space-y-1 pt-1">
-          <div>
-            <span className="font-semibold text-slate-700 dark:text-slate-300">Channel ID: </span>
-            <span className="font-bold text-slate-900 dark:text-white font-mono">{channelIdNum}</span>
-          </div>
-          <div>
-            <span className="font-semibold text-slate-700 dark:text-slate-300">Author: </span>
-            <span className="text-[#137f3a] dark:text-emerald-400 font-medium cursor-pointer">{authorName}</span>
-          </div>
-          <div>
-            <span className="font-semibold text-slate-700 dark:text-slate-300">Access: </span>
-            <span>{isPrivate ? "Private" : "Public"}</span>
+    <div className="p-3 sm:p-5 max-w-7xl mx-auto space-y-4 animate-fadeIn transition-colors text-slate-800 dark:text-slate-200 text-sm">
+      {/* 1. Header Information Strip (Clean Compact Row) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4 pb-0.5">
+        <div className="space-y-0.5">
+          <div className="flex flex-wrap items-baseline gap-2 sm:gap-3">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              {ch.name || `Channel ${channelIdNum}`}
+            </h1>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-sans">
+              <span>Channel ID: <strong className="font-mono text-slate-800 dark:text-slate-200">{channelIdNum}</strong></span>
+              <span>•</span>
+              <span>Author: <strong className="text-[#137f3a] dark:text-emerald-400 font-semibold">{authorName}</strong></span>
+              <span>•</span>
+              <span>Access: <strong className="text-slate-800 dark:text-slate-200 font-semibold">{isPrivate ? "Private" : "Public"}</strong></span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 2. Channel Sub-Navigation Tabs Bar */}
+      {/* 2. Channel Sub-Navigation Tabs Bar (Compact Touch Scroll) */}
       <div className="border-b border-slate-200 dark:border-slate-700 overflow-x-auto scrollbar-none">
         <nav className="flex items-center gap-1 -mb-px text-xs sm:text-sm font-semibold whitespace-nowrap min-w-max pb-0.5">
           {[
@@ -406,7 +403,7 @@ export function ChannelDetailView({ channelId, onBack }) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-2 sm:py-2.5 px-3.5 sm:px-5 shrink-0 rounded-t border transition-all cursor-pointer ${
+                className={`py-1.5 sm:py-2 px-3 sm:px-4 shrink-0 rounded-t border transition-all cursor-pointer ${
                   isActive
                     ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-300 dark:border-slate-700 border-b-white dark:border-b-slate-900 shadow-sm"
                     : "text-[#137f3a] dark:text-emerald-400 hover:text-[#0f682f] border-transparent"
@@ -421,46 +418,46 @@ export function ChannelDetailView({ channelId, onBack }) {
 
       {/* 3. Action Buttons Strip & MATLAB Buttons (shown on Private and Public View) */}
       {(activeTab === "private" || activeTab === "public") && (
-        <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-0.5">
           {/* Left Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 text-xs sm:text-sm">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
             <button
               onClick={handleAddCustomField}
-              className="px-3 sm:px-3.5 py-1.5 sm:py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-[#137f3a] dark:text-emerald-400 font-semibold rounded border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+              className="px-3 py-1.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-[#137f3a] dark:text-emerald-400 font-semibold rounded border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <Plus className="w-3.5 h-3.5" />
               <span>Add Visualizations</span>
             </button>
 
             <button
               onClick={() => setShowAddWidgetModal(true)}
-              className="px-3 sm:px-3.5 py-1.5 sm:py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-[#137f3a] dark:text-emerald-400 font-semibold rounded border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+              className="px-3 py-1.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-[#137f3a] dark:text-emerald-400 font-semibold rounded border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <Plus className="w-3.5 h-3.5" />
               <span>Add Widgets</span>
             </button>
 
             <button
               onClick={handleDownloadExportCsv}
-              className="px-3 sm:px-3.5 py-1.5 sm:py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-[#137f3a] dark:text-emerald-400 font-semibold rounded border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+              className="px-3 py-1.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-[#137f3a] dark:text-emerald-400 font-semibold rounded border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
             >
-              <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <ExternalLink className="w-3.5 h-3.5" />
               <span>Export recent data</span>
             </button>
           </div>
 
           {/* Right Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 text-xs sm:text-sm">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
             <button
               onClick={() => setShowMatlabModal("analysis")}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[#137f3a] hover:bg-[#0f682f] text-white font-bold rounded shadow transition-all cursor-pointer text-xs sm:text-sm"
+              className="px-3 py-1.5 bg-[#137f3a] hover:bg-[#0f682f] text-white font-bold rounded shadow transition-all cursor-pointer"
             >
               MATLAB Analysis
             </button>
 
             <button
               onClick={() => setShowMatlabModal("visualization")}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[#137f3a] hover:bg-[#0f682f] text-white font-bold rounded shadow transition-all cursor-pointer text-xs sm:text-sm"
+              className="px-3 py-1.5 bg-[#137f3a] hover:bg-[#0f682f] text-white font-bold rounded shadow transition-all cursor-pointer"
             >
               MATLAB Visualization
             </button>
@@ -470,20 +467,17 @@ export function ChannelDetailView({ channelId, onBack }) {
 
       {/* 4. Tab 1: Private View (Field Charts Grid & Custom Widgets) */}
       {activeTab === "private" && (
-        <div className="space-y-6">
-          {/* Channel Stats */}
-          <div className="space-y-1 text-sm text-slate-600 dark:text-slate-400 pt-1">
-            <h3 className="text-2xl font-light text-slate-900 dark:text-white mb-2">Channel Stats</h3>
-            <div>
-              Created: <span className="text-slate-800 dark:text-slate-200">{stats.created}</span>
-            </div>
-            <div>
-              Entries: <span className="font-mono text-slate-800 dark:text-slate-200">{stats.entries}</span>
-            </div>
+        <div className="space-y-4 pt-1">
+          {/* Channel Stats: Compact Inline Bar */}
+          <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 py-0.5">
+            <span className="font-semibold text-slate-700 dark:text-slate-300">Channel Stats:</span>
+            <span>Created: <strong className="text-slate-800 dark:text-slate-200">{stats.created}</strong></span>
+            <span>•</span>
+            <span>Entries: <strong className="font-mono text-slate-800 dark:text-slate-200">{stats.entries}</strong></span>
           </div>
 
           {/* Grid of Individual Field Charts (2 Columns) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {fields.map((f, i) => (
               <SingleFieldChart
                 key={f.id || f.field_key || i}
@@ -497,9 +491,9 @@ export function ChannelDetailView({ channelId, onBack }) {
 
           {/* Render Channel Widgets */}
           {widgets.length > 0 && (
-            <div className="space-y-4 pt-2">
-              <h3 className="text-2xl font-light text-slate-900 dark:text-white">Channel Widgets</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-2 pt-1">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Channel Widgets</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {widgets.map((w) => (
                   <ThingSpeakWidgetRenderer
                     key={w.id}
@@ -517,14 +511,14 @@ export function ChannelDetailView({ channelId, onBack }) {
             </div>
           )}
 
-          {/* Dotted Box: + Add Visualizations */}
+          {/* Slim Sleek Add Visualization Bar */}
           <div
             onClick={handleAddCustomField}
-            className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-[#137f3a] dark:hover:border-emerald-500 rounded p-12 text-center cursor-pointer transition-colors"
+            className="border border-dashed border-slate-300 dark:border-slate-700 hover:border-[#137f3a] dark:hover:border-emerald-500 rounded-lg py-3 px-4 text-center cursor-pointer transition-colors bg-white/50 dark:bg-slate-900/50"
           >
-            <button className="text-[#137f3a] dark:text-emerald-400 font-semibold text-sm flex items-center justify-center gap-2 mx-auto cursor-pointer">
-              <Plus className="w-5 h-5" />
-              <span>Add Visualizations</span>
+            <button className="text-[#137f3a] dark:text-emerald-400 font-semibold text-xs flex items-center justify-center gap-1.5 mx-auto cursor-pointer">
+              <Plus className="w-4 h-4" />
+              <span>+ Add Field Visualization</span>
             </button>
           </div>
         </div>
@@ -532,7 +526,7 @@ export function ChannelDetailView({ channelId, onBack }) {
 
       {/* 5. Tab 2: Public View */}
       {activeTab === "public" && (
-        <div className="space-y-6">
+        <div className="space-y-4 pt-1">
           <div className="flex items-center justify-between p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 rounded-lg text-sm">
             <div className="flex items-center gap-2.5">
               <Globe className="w-5 h-5 text-[#137f3a] dark:text-emerald-400" />
@@ -548,7 +542,7 @@ export function ChannelDetailView({ channelId, onBack }) {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {fields.map((f, i) => (
               <SingleFieldChart
                 key={f.id || f.field_key || i}
@@ -561,9 +555,9 @@ export function ChannelDetailView({ channelId, onBack }) {
 
           {/* Render Channel Widgets in Public View */}
           {widgets.length > 0 && (
-            <div className="space-y-4 pt-2">
-              <h3 className="text-2xl font-light text-slate-900 dark:text-white">Channel Widgets</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-2 pt-1">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Channel Widgets</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {widgets.map((w) => (
                   <ThingSpeakWidgetRenderer
                     key={w.id}
