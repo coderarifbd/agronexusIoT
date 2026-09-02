@@ -135,6 +135,20 @@ export function AddWidgetModal({ isOpen, onClose, channel, channelId, fields = [
     }
   }
 
+  function handleNext() {
+    setName((prev) => {
+      if (prev && prev.trim() !== "") return prev;
+      return selectedWidget === "gauge"
+        ? "Gauge"
+        : selectedWidget === "numeric"
+        ? "Numeric Display"
+        : selectedWidget === "lamp"
+        ? "Lamp Indicator"
+        : "Image Display";
+    });
+    setStep(2);
+  }
+
   function handleClose() {
     onClose();
   }
@@ -476,6 +490,15 @@ export function AddWidgetModal({ isOpen, onClose, channel, channelId, fields = [
 
             {/* Footer Buttons */}
             <div className="flex items-center justify-end gap-2 pt-2.5 border-t border-slate-200 dark:border-slate-800">
+              {!isEditMode && (
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="px-4 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs rounded border border-slate-300 dark:border-slate-700 transition-all cursor-pointer mr-auto"
+                >
+                  ← Back
+                </button>
+              )}
               <button
                 type="submit"
                 disabled={loading}
