@@ -5,7 +5,7 @@ import {
   Radio,
   Cpu,
   UserCheck,
-  LogOut
+  Terminal
 } from "lucide-react";
 
 export function Sidebar({ currentTab, setCurrentTab }) {
@@ -15,6 +15,7 @@ export function Sidebar({ currentTab, setCurrentTab }) {
     { id: "dashboard", name: "Live Dashboard", icon: LayoutDashboard },
     { id: "channels", name: "My Channels", icon: Radio },
     { id: "devices", name: "IoT Devices Fleet", icon: Cpu },
+    { id: "codegen", name: "Code Generator", icon: Terminal, badge: "NEW" },
     { id: "profile", name: "Security & Profile", icon: UserCheck }
   ];
 
@@ -40,7 +41,12 @@ export function Sidebar({ currentTab, setCurrentTab }) {
               }`}
             >
               <Icon className={`w-4 h-4 ${isActive ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}`} />
-              <span>{item.name}</span>
+              <span className="flex-1 text-left">{item.name}</span>
+              {item.badge && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-600 text-white leading-none">
+                  {item.badge}
+                </span>
+              )}
             </button>
           );
         })}

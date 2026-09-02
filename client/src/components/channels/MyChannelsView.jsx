@@ -21,7 +21,7 @@ import {
   ArrowLeft
 } from "lucide-react";
 
-export function MyChannelsView({ onNavigateToDashboard, onBack }) {
+export function MyChannelsView({ onNavigateToDashboard, onBack, onNavigateToCodeGen }) {
   const { projects, activeProject, selectProject, selectChannel, loadProjects } = useProject();
 
   const [viewMode, setViewMode] = useState("list"); // "list", "create", or "detail"
@@ -350,6 +350,7 @@ if __name__ == "__main__":
     return (
       <ChannelDetailView
         channelId={selectedChannelForDetail.id}
+        onNavigateToCodeGen={onNavigateToCodeGen}
         onBack={() => {
           setViewMode("list");
           setSelectedChannelForDetail(null);

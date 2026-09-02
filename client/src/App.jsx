@@ -16,6 +16,7 @@ import { MyChannelsView } from "./components/channels/MyChannelsView";
 import { DevicesView } from "./components/devices/DevicesView";
 import { ProfileView } from "./components/profile/ProfileView";
 import { AIAssistantModal } from "./components/ai/AIAssistantModal";
+import { CodeGeneratorView } from "./components/codegen/CodeGeneratorView";
 
 import { AlertTriangle, X, RefreshCw } from "lucide-react";
 
@@ -67,6 +68,7 @@ function MainApp() {
 
   const [currentTab, setCurrentTab] = useState("dashboard");
   const [tabHistory, setTabHistory] = useState([]);
+  const [codegenPrefill, setCodegenPrefill] = useState(null);
   const [showAI, setShowAI] = useState(false);
   const [showAlerts, setShowAlerts] = useState(false);
   const [showActivity, setShowActivity] = useState(false);
@@ -76,6 +78,11 @@ function MainApp() {
       setTabHistory(prev => [...prev, currentTab]);
       setCurrentTab(tab);
     }
+  }
+
+  function handleOpenCodeGen(prefillData) {
+    setCodegenPrefill(prefillData || null);
+    navigateTo("codegen");
   }
 
   function goBack() {
@@ -153,13 +160,22 @@ function MainApp() {
             {(currentTab === "channels" || currentTab === "projects") && (
               <MyChannelsView
                 onNavigateToDashboard={() => navigateTo("dashboard")}
+                onNavigateToCodeGen={handleOpenCodeGen}
                 onBack={goBack}
               />
             )}
             {currentTab === "devices" && (
               <DevicesView
                 onNavigateToDashboard={() => navigateTo("dashboard")}
+                onNavigateToCodeGen={handleOpenCodeGen}
                 onBack={goBack}
+              />
+            )}
+            {currentTab === "codegen" && (
+              <CodeGeneratorView
+                prefill={codegenPrefill}
+                onNavigateToDevices={() => navigateTo("devices")}
+                onNavigateToChannels={() => navigateTo("channels")}
               />
             )}
             {currentTab === "profile" && (

@@ -11,10 +11,12 @@ import {
   Trash2,
   Code,
   ArrowLeft,
-  X
+  X,
+  Sparkles,
+  Terminal
 } from "lucide-react";
 
-export function DevicesView({ onBack, onNavigateToDashboard }) {
+export function DevicesView({ onBack, onNavigateToDashboard, onNavigateToCodeGen }) {
   const handleBack = onBack || onNavigateToDashboard;
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -226,6 +228,41 @@ void loop() {
               <Trash2 className="w-3.5 h-3.5" />
               <span>Delete Device</span>
             </button>
+          </div>
+
+          {/* Automatic IoT Code Generator Callout */}
+          <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 rounded-xl border border-emerald-200 dark:border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-xs font-bold text-slate-900 dark:text-white">
+                  Automatic Firmware Code Generator
+                </span>
+                <span className="text-[10px] uppercase font-bold bg-emerald-600 text-white px-1.5 py-0.2 rounded">
+                  NEW
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Generate ready-to-flash C++ or Python firmware customized for this {selectedDevice.device_type} with sensors, WiFi, and live ingestion.
+              </p>
+            </div>
+
+            {onNavigateToCodeGen && (
+              <button
+                type="button"
+                onClick={() =>
+                  onNavigateToCodeGen({
+                    boardId: selectedDevice.device_type?.toLowerCase() === "esp8266" ? "esp8266" : selectedDevice.device_type?.toLowerCase() === "raspberrypi" ? "raspberry_pi" : selectedDevice.device_type?.toLowerCase() === "arduino" ? "arduino_uno" : "esp32",
+                    deviceId: selectedDevice.device_id_code,
+                    apiKey: selectedDevice.api_key
+                  })
+                }
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-600/20 transition-all cursor-pointer whitespace-nowrap"
+              >
+                <Terminal className="w-3.5 h-3.5" />
+                <span>Launch Code Generator</span>
+              </button>
+            )}
           </div>
 
           {/* Credentials Bar */}

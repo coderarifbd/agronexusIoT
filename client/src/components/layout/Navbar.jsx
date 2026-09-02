@@ -22,7 +22,8 @@ import {
   UserCheck,
   LogOut,
   Folder,
-  ArrowLeft
+  ArrowLeft,
+  Terminal
 } from "lucide-react";
 
 export function Navbar({ onOpenAI, onOpenAlerts, onOpenActivity, onOpenSimulator, currentTab, setCurrentTab, onBack, canGoBack }) {
@@ -61,6 +62,7 @@ export function Navbar({ onOpenAI, onOpenAlerts, onOpenActivity, onOpenSimulator
     { id: "dashboard", name: "Live Dashboard", icon: LayoutDashboard },
     { id: "channels", name: "My Channels", icon: Radio },
     { id: "devices", name: "IoT Devices Fleet", icon: Cpu },
+    { id: "codegen", name: "Code Generator", icon: Terminal },
     { id: "profile", name: "Security & Profile", icon: UserCheck }
   ];
 

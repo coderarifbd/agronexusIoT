@@ -24,10 +24,12 @@ import {
   Activity,
   Upload,
   AlertCircle,
-  ArrowLeft
+  ArrowLeft,
+  Terminal,
+  Sparkles
 } from "lucide-react";
 
-export function ChannelDetailView({ channelId, onBack }) {
+export function ChannelDetailView({ channelId, onBack, onNavigateToCodeGen }) {
   const { user } = useAuth();
   const { activeChannel, selectChannel, loadProjects } = useProject();
 
@@ -956,7 +958,7 @@ export function ChannelDetailView({ channelId, onBack }) {
                 </div>
               </div>
 
-              <div className="pt-1">
+              <div className="pt-1 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => alert("See documentation on AgroNexus REST API endpoints")}
@@ -964,6 +966,35 @@ export function ChannelDetailView({ channelId, onBack }) {
                 >
                   Learn More
                 </button>
+              </div>
+
+              {/* Automatic IoT Firmware Generator Callout */}
+              <div className="mt-4 p-4 bg-emerald-50/80 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-500/30 space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span className="font-bold text-xs text-slate-900 dark:text-white">
+                    Need Hardware Code for this Channel?
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Generate complete, compile-ready firmware sketches (ESP32, ESP8266, Arduino, Raspberry Pi) automatically configured with this channel's Write API Key and sensor fields.
+                </p>
+                {onNavigateToCodeGen && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onNavigateToCodeGen({
+                        boardId: "esp32",
+                        deviceId: `${ch.name?.toUpperCase().replace(/[^A-Z0-9]/g, "_") || "CHANNEL"}_NODE`,
+                        apiKey: writeApiKey
+                      })
+                    }
+                    className="flex items-center justify-center gap-2 w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 cursor-pointer transition-all"
+                  >
+                    <Terminal className="w-3.5 h-3.5" />
+                    <span>⚡ Launch Code Generator for this Channel</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

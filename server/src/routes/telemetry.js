@@ -12,8 +12,11 @@ const router = express.Router();
 // Helper: Common ingestion processor
 async function processAndStoreTelemetry(channel, device, rawData) {
   const sensorData = {};
-  for (const [k, v] of Object.entries(rawData)) {
-    if (!["device_id", "device_id_code", "api_key", "secret", "timestamp", "created_at"].includes(k)) {
+  // Unpack nested data object if present (e.g. { device_id, api_key, data: { temperature: 28.5, humidity: 70 } })
+  const payload = (rawData.data && typeof rawData.data === "object") ? { ...rawData, ...rawData.data } : rawData;
+
+  for (const [k, v] of Object.entries(payload)) {
+    if (!["device_id", "device_id_code", "api_key", "secret", "timestamp", "created_at", "data"].includes(k)) {
       if (typeof v === "number" || (typeof v === "string" && v.trim() !== "")) {
         sensorData[k] = isNaN(Number(v)) ? v : Number(v);
       }
