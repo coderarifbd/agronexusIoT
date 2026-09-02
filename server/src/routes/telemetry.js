@@ -117,8 +117,18 @@ router.post("/data", async (req, res) => {
 
   if (device && device.channel_id) {
     channel = await db.get("SELECT * FROM channels WHERE id = $1", [device.channel_id]);
-  } else if (apiKey) {
+  }
+
+  if (!channel && apiKey) {
     channel = await db.get("SELECT * FROM channels WHERE api_write_key = $1", [apiKey]);
+  }
+
+  // Fallback: If device exists but channel_id is not yet set, link to the owner's primary channel
+  if (!channel && device && device.user_id) {
+    channel = await db.get("SELECT * FROM channels WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1", [device.user_id]);
+    if (channel) {
+      await db.run("UPDATE devices SET channel_id = $1 WHERE id = $2", [channel.id, device.id]);
+    }
   }
 
   if (!channel) {

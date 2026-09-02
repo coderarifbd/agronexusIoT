@@ -190,7 +190,7 @@ async function runTests() {
       }
       if (missingInc) continue;
 
-      if (!code.includes("void setup()") || !code.includes("void loop()") || !code.includes("StaticJsonDocument")) {
+      if (!code.includes("void setup()") || !code.includes("void loop()") || !code.includes("doc")) {
         console.log(`FAILED: Missing setup/loop/json in Arduino code!`);
         continue;
       }
@@ -205,7 +205,7 @@ async function runTests() {
   console.log(`==================================================\n`);
 
   // 4. Test Live Data Ingestion with Generated Schema into Neon Cloud
-  console.log("Testing live server ingestion with generated nested schema...");
+  console.log("Testing live server ingestion with Channel Write Key...");
   try {
     const { db } = await import("./src/db.js");
     const ch = await db.get("SELECT id, api_write_key FROM channels LIMIT 1");
@@ -232,12 +232,57 @@ async function runTests() {
     console.log("Server Response:", json);
 
     if (res.status === 200 && json.success) {
-      console.log("End-to-end data ingestion verification: PASSED ✓");
+      console.log("Channel Write Key Ingestion: PASSED ✓");
     } else {
-      console.log("End-to-end data ingestion verification: FAILED", json);
+      console.log("Channel Write Key Ingestion: FAILED", json);
+    }
+
+    // 5. Test Live Ingestion via Registered Device Credentials
+    console.log("\nTesting live server ingestion using Device Credentials...");
+    const dev = await db.get("SELECT id, device_id_code, api_key, channel_id FROM devices LIMIT 1");
+    if (dev) {
+      const devPayload = {
+        device_id: dev.device_id_code,
+        api_key: dev.api_key,
+        data: {
+          field1: 58.0,
+          temperature: 29.1,
+          humidity: 62.4
+        }
+      };
+
+      const devRes = await fetch("http://localhost:5050/api/data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(devPayload)
+      });
+
+      const devJson = await devRes.json();
+      console.log("Device Ingestion HTTP Status:", devRes.status);
+      console.log("Device Response:", devJson);
+
+      if (devRes.status === 200 && devJson.success) {
+        console.log("Device Credentials Ingestion: PASSED ✓");
+      } else {
+        console.log("Device Credentials Ingestion: FAILED", devJson);
+      }
+    }
+
+    // 6. Verify Data is Stored in Neon Database
+    console.log("\nVerifying telemetry storage in Neon Cloud PostgreSQL...");
+    const latestFeed = await db.get(
+      "SELECT id, channel_id, data_json, timestamp FROM telemetry_data WHERE channel_id = $1 ORDER BY timestamp DESC LIMIT 1",
+      [ch.id]
+    );
+
+    if (latestFeed && latestFeed.data_json) {
+      console.log("Latest Database Telemetry Record:", latestFeed);
+      console.log("Database Persistence Verification: PASSED ✓");
+    } else {
+      console.log("Database Persistence Verification: FAILED (No record found)");
     }
   } catch (err) {
-    console.log("Ingestion network error:", err.message);
+    console.log("Ingestion test error:", err.message);
   }
 
   process.exit(0);

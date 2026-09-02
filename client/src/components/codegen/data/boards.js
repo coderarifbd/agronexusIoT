@@ -33,11 +33,7 @@ export const BOARDS = {
       { pin: 26, label: "GPIO 26 (DAC2)" },
       { pin: 27, label: "GPIO 27 (D27)" },
       { pin: 32, label: "GPIO 32 (ADC1_CH4)", isAdc: true },
-      { pin: 33, label: "GPIO 33 (ADC1_CH5)", isAdc: true },
-      { pin: 34, label: "GPIO 34 (ADC1_CH6 - Input only)", isAdc: true },
-      { pin: 35, label: "GPIO 35 (ADC1_CH7 - Input only)", isAdc: true },
-      { pin: 36, label: "GPIO 36 (VP - ADC1_CH0 - Input only)", isAdc: true },
-      { pin: 39, label: "GPIO 39 (VN - ADC1_CH3 - Input only)", isAdc: true }
+      { pin: 33, label: "GPIO 33 (ADC1_CH5)", isAdc: true }
     ],
     adcPins: [
       { pin: 34, label: "GPIO 34 (ADC1 - Recommended)", recommended: true },

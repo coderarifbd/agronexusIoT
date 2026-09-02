@@ -28,6 +28,8 @@ export function DevicesView({ onBack, onNavigateToDashboard, onNavigateToCodeGen
   const [deviceName, setDeviceName] = useState("");
   const [deviceType, setDeviceType] = useState("ESP32");
   const [locationName, setLocationName] = useState("Field Sector 1");
+  const [channelId, setChannelId] = useState("");
+  const [channels, setChannels] = useState([]);
 
   useEffect(() => {
     loadDevices();
@@ -36,10 +38,14 @@ export function DevicesView({ onBack, onNavigateToDashboard, onNavigateToCodeGen
   async function loadDevices() {
     try {
       setLoading(true);
-      const res = await api.getDevices();
-      setDevices(res.devices);
-      if (res.devices.length > 0 && !selectedDevice) {
-        setSelectedDevice(res.devices[0]);
+      const [devRes, chanRes] = await Promise.all([
+        api.getDevices(),
+        api.getChannels().catch(() => ({ channels: [] }))
+      ]);
+      setDevices(devRes.devices || []);
+      setChannels(chanRes.channels || []);
+      if (devRes.devices?.length > 0 && !selectedDevice) {
+        setSelectedDevice(devRes.devices[0]);
       }
     } catch (e) {
       console.error(e);
@@ -55,9 +61,11 @@ export function DevicesView({ onBack, onNavigateToDashboard, onNavigateToCodeGen
       await api.createDevice({
         name: deviceName,
         device_type: deviceType,
-        location_name: locationName
+        location_name: locationName,
+        channel_id: channelId || null
       });
       setDeviceName("");
+      setChannelId("");
       setShowRegisterModal(false);
       loadDevices();
     } catch (e) {
@@ -216,8 +224,13 @@ void loop() {
                 </span>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">{selectedDevice.name}</h3>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Location: {selectedDevice.location_name} • IP: {selectedDevice.ip_address || "192.168.1.105"}
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex flex-wrap items-center gap-1.5">
+                <span>Location: {selectedDevice.location_name} • IP: {selectedDevice.ip_address || "192.168.1.105"}</span>
+                {selectedDevice.channel_id && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+                    Linked Channel: {channels.find(c => c.id === selectedDevice.channel_id)?.name || selectedDevice.channel_id.slice(0, 8)}
+                  </span>
+                )}
               </p>
             </div>
 
@@ -250,13 +263,14 @@ void loop() {
             {onNavigateToCodeGen && (
               <button
                 type="button"
-                onClick={() =>
+                onClick={() => {
+                  const linkedCh = channels.find(c => c.id === selectedDevice.channel_id);
                   onNavigateToCodeGen({
                     boardId: selectedDevice.device_type?.toLowerCase() === "esp8266" ? "esp8266" : selectedDevice.device_type?.toLowerCase() === "raspberrypi" ? "raspberry_pi" : selectedDevice.device_type?.toLowerCase() === "arduino" ? "arduino_uno" : "esp32",
                     deviceId: selectedDevice.device_id_code,
-                    apiKey: selectedDevice.api_key
-                  })
-                }
+                    apiKey: linkedCh?.api_write_key || selectedDevice.api_key
+                  });
+                }}
                 className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-600/20 transition-all cursor-pointer whitespace-nowrap"
               >
                 <Terminal className="w-3.5 h-3.5" />
@@ -399,6 +413,27 @@ void loop() {
                   placeholder="e.g. Nursery Hydroponics Rack"
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2 text-sm text-slate-900 dark:text-white focus:outline-none"
                 />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Associate with Channel (Recommended)
+                </label>
+                <select
+                  value={channelId}
+                  onChange={(e) => setChannelId(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2 text-sm text-slate-900 dark:text-white focus:outline-none cursor-pointer"
+                >
+                  <option value="">-- No Channel (Standalone Device) --</option>
+                  {channels.map((ch) => (
+                    <option key={ch.id} value={ch.id}>
+                      {ch.name} ({ch.id.slice(0, 8)}...)
+                    </option>
+                  ))}
+                </select>
+                <span className="text-[11px] text-slate-400 mt-1 block">
+                  Automatically directs telemetry to this channel's live widgets and charts.
+                </span>
               </div>
 
               <div className="flex items-center gap-2.5 pt-2">

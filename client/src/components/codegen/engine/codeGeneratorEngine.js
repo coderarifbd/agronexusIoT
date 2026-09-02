@@ -59,6 +59,14 @@ export function validateConfiguration(boardId, selectedSensors) {
             warnings.push(`Pin GPIO ${pinVal} is on ADC2. ADC2 cannot be used simultaneously with Wi-Fi on ESP32. We strongly recommend using ADC1 pins (GPIO 32, 33, 34, 35, 36, 39).`);
           }
         }
+
+        // Input-only pin restriction for digital/bus sensors on ESP32
+        if (boardId === "esp32" && meta.interface !== "analog") {
+          const numPin = Number(pinVal);
+          if ([34, 35, 36, 39].includes(numPin)) {
+            errors.push(`GPIO ${pinVal} on ESP32 is an input-only pin without internal pull-ups or output drivers. It cannot be used for ${meta.shortName} (${pinRole}). Please select GPIO 4, 5, 12-27, 32, or 33.`);
+          }
+        }
       }
     }
   }
@@ -150,8 +158,16 @@ export function generateArduinoCode({
         readBlocks.push(`    } else {`);
         readBlocks.push(`      Serial.print(F("Temperature: ")); Serial.print(temp_${inst}); Serial.println(F(" °C"));`);
         readBlocks.push(`      Serial.print(F("Humidity: ")); Serial.print(hum_${inst}); Serial.println(F(" %"));`);
-        readBlocks.push(`      dataObj["${s.fields?.temperature || "temperature"}"] = serialized(String(temp_${inst}, 1));`);
-        readBlocks.push(`      dataObj["${s.fields?.humidity || "humidity"}"] = serialized(String(hum_${inst}, 1));`);
+        readBlocks.push(`      float t_${inst} = round(temp_${inst} * 10.0f) / 10.0f;`);
+        readBlocks.push(`      float h_${inst} = round(hum_${inst} * 10.0f) / 10.0f;`);
+        readBlocks.push(`      dataObj["${s.fields?.temperature || "temperature"}"] = t_${inst};`);
+        readBlocks.push(`      dataObj["${s.fields?.humidity || "humidity"}"] = h_${inst};`);
+        if ((s.fields?.temperature || "temperature") !== "temperature") {
+          readBlocks.push(`      dataObj["temperature"] = t_${inst};`);
+        }
+        if ((s.fields?.humidity || "humidity") !== "humidity") {
+          readBlocks.push(`      dataObj["humidity"] = h_${inst};`);
+        }
         readBlocks.push(`    }`);
         break;
       }
@@ -178,8 +194,12 @@ export function generateArduinoCode({
         readBlocks.push(`    // Map calibrated dry and wet values to 0.0 - 100.0% moisture`);
         readBlocks.push(`    float soilMoisture_${inst} = map(rawSoil_${inst}, SOIL_DRY_${inst}, SOIL_WET_${inst}, 0, 100);`);
         readBlocks.push(`    soilMoisture_${inst} = constrain(soilMoisture_${inst}, 0.0, 100.0);`);
-        readBlocks.push(`    Serial.print(F("Soil Moisture: ")); Serial.print(soilMoisture_${inst}); Serial.println(F(" %"));`);
-        readBlocks.push(`    dataObj["${s.fields?.soil_moisture || "soil_moisture"}"] = serialized(String(soilMoisture_${inst}, 1));`);
+        readBlocks.push(`    float m_${inst} = round(soilMoisture_${inst} * 10.0f) / 10.0f;`);
+        readBlocks.push(`    Serial.print(F("Soil Moisture: ")); Serial.print(m_${inst}); Serial.println(F(" %"));`);
+        readBlocks.push(`    dataObj["${s.fields?.soil_moisture || "soil_moisture"}"] = m_${inst};`);
+        if ((s.fields?.soil_moisture || "soil_moisture") !== "soil_moisture") {
+          readBlocks.push(`    dataObj["soil_moisture"] = m_${inst};`);
+        }
         break;
       }
 
@@ -208,8 +228,12 @@ export function generateArduinoCode({
         readBlocks.push(`    float phSlope_${inst} = (7.0 - 4.0) / (PH_NEUTRAL_V_${inst} - PH_ACID_V_${inst});`);
         readBlocks.push(`    float phVal_${inst} = 7.0 + phSlope_${inst} * (phVoltage_${inst} - PH_NEUTRAL_V_${inst});`);
         readBlocks.push(`    phVal_${inst} = constrain(phVal_${inst}, 0.0, 14.0);`);
-        readBlocks.push(`    Serial.print(F("pH Reading: ")); Serial.print(phVal_${inst}); Serial.println(F(" pH"));`);
-        readBlocks.push(`    dataObj["${s.fields?.ph || "ph"}"] = serialized(String(phVal_${inst}, 2));`);
+        readBlocks.push(`    float phFinal_${inst} = round(phVal_${inst} * 100.0f) / 100.0f;`);
+        readBlocks.push(`    Serial.print(F("pH Reading: ")); Serial.print(phFinal_${inst}); Serial.println(F(" pH"));`);
+        readBlocks.push(`    dataObj["${s.fields?.ph || "ph"}"] = phFinal_${inst};`);
+        if ((s.fields?.ph || "ph") !== "ph") {
+          readBlocks.push(`    dataObj["ph"] = phFinal_${inst};`);
+        }
         break;
       }
 
@@ -240,8 +264,12 @@ export function generateArduinoCode({
         readBlocks.push(`    // Conversion curve to PPM`);
         readBlocks.push(`    float tdsValue_${inst} = (133.42 * compVoltage_${inst} * compVoltage_${inst} * compVoltage_${inst} - 255.86 * compVoltage_${inst} * compVoltage_${inst} + 857.39 * compVoltage_${inst}) * 0.5 * TDS_FACTOR_${inst};`);
         readBlocks.push(`    tdsValue_${inst} = max(0.0f, tdsValue_${inst});`);
-        readBlocks.push(`    Serial.print(F("TDS Value: ")); Serial.print(tdsValue_${inst}); Serial.println(F(" ppm"));`);
-        readBlocks.push(`    dataObj["${s.fields?.tds || "tds"}"] = serialized(String(tdsValue_${inst}, 1));`);
+        readBlocks.push(`    float tdsFinal_${inst} = round(tdsValue_${inst} * 10.0f) / 10.0f;`);
+        readBlocks.push(`    Serial.print(F("TDS Value: ")); Serial.print(tdsFinal_${inst}); Serial.println(F(" ppm"));`);
+        readBlocks.push(`    dataObj["${s.fields?.tds || "tds"}"] = tdsFinal_${inst};`);
+        if ((s.fields?.tds || "tds") !== "tds") {
+          readBlocks.push(`    dataObj["tds"] = tdsFinal_${inst};`);
+        }
         break;
       }
 
@@ -261,8 +289,12 @@ export function generateArduinoCode({
         readBlocks.push(`    if (lux_${inst} < 0) {`);
         readBlocks.push(`      Serial.println(F("[ERROR] Failed to read BH1750 light level!"));`);
         readBlocks.push(`    } else {`);
-        readBlocks.push(`      Serial.print(F("Light Intensity: ")); Serial.print(lux_${inst}); Serial.println(F(" lx"));`);
-        readBlocks.push(`      dataObj["${s.fields?.lux || "lux"}"] = serialized(String(lux_${inst}, 1));`);
+        readBlocks.push(`      float luxFinal_${inst} = round(lux_${inst} * 10.0f) / 10.0f;`);
+        readBlocks.push(`      Serial.print(F("Light Intensity: ")); Serial.print(luxFinal_${inst}); Serial.println(F(" lx"));`);
+        readBlocks.push(`      dataObj["${s.fields?.lux || "lux"}"] = luxFinal_${inst};`);
+        if ((s.fields?.lux || "lux") !== "lux") {
+          readBlocks.push(`      dataObj["lux"] = luxFinal_${inst};`);
+        }
         readBlocks.push(`    }`);
         break;
       }
@@ -282,8 +314,12 @@ export function generateArduinoCode({
         readBlocks.push(`    if (probeTemp_${inst} == DEVICE_DISCONNECTED_C || probeTemp_${inst} < -55.0) {`);
         readBlocks.push(`      Serial.println(F("[ERROR] DS18B20 Probe #${inst} disconnected or read error!"));`);
         readBlocks.push(`    } else {`);
-        readBlocks.push(`      Serial.print(F("Water/Soil Probe: ")); Serial.print(probeTemp_${inst}); Serial.println(F(" °C"));`);
-        readBlocks.push(`      dataObj["${s.fields?.temperature || "temperature"}"] = serialized(String(probeTemp_${inst}, 2));`);
+        readBlocks.push(`      float probeFinal_${inst} = round(probeTemp_${inst} * 10.0f) / 10.0f;`);
+        readBlocks.push(`      Serial.print(F("Water/Soil Probe: ")); Serial.print(probeFinal_${inst}); Serial.println(F(" °C"));`);
+        readBlocks.push(`      dataObj["${s.fields?.temperature || "temperature"}"] = probeFinal_${inst};`);
+        if ((s.fields?.temperature || "temperature") !== "temperature") {
+          readBlocks.push(`      dataObj["temperature"] = probeFinal_${inst};`);
+        }
         readBlocks.push(`    }`);
         break;
       }
@@ -300,15 +336,24 @@ export function generateArduinoCode({
         setups.push(`  }`);
 
         readBlocks.push(`    // Read BME280 Sensor #${inst}`);
-        readBlocks.push(`    float bmeTemp_${inst} = bme_${inst}.readTemperature();`);
-        readBlocks.push(`    float bmeHum_${inst} = bme_${inst}.readHumidity();`);
-        readBlocks.push(`    float bmePress_${inst} = bme_${inst}.readPressure() / 100.0F;`);
+        readBlocks.push(`    float bmeTemp_${inst} = round(bme_${inst}.readTemperature() * 10.0f) / 10.0f;`);
+        readBlocks.push(`    float bmeHum_${inst} = round(bme_${inst}.readHumidity() * 10.0f) / 10.0f;`);
+        readBlocks.push(`    float bmePress_${inst} = round((bme_${inst}.readPressure() / 100.0F) * 10.0f) / 10.0f;`);
         readBlocks.push(`    Serial.print(F("BME Temp: ")); Serial.print(bmeTemp_${inst}); Serial.println(F(" °C"));`);
         readBlocks.push(`    Serial.print(F("BME Hum: ")); Serial.print(bmeHum_${inst}); Serial.println(F(" %"));`);
         readBlocks.push(`    Serial.print(F("BME Pressure: ")); Serial.print(bmePress_${inst}); Serial.println(F(" hPa"));`);
-        readBlocks.push(`    dataObj["${s.fields?.temperature || "temperature"}"] = serialized(String(bmeTemp_${inst}, 1));`);
-        readBlocks.push(`    dataObj["${s.fields?.humidity || "humidity"}"] = serialized(String(bmeHum_${inst}, 1));`);
-        readBlocks.push(`    dataObj["${s.fields?.pressure || "pressure"}"] = serialized(String(bmePress_${inst}, 1));`);
+        readBlocks.push(`    dataObj["${s.fields?.temperature || "temperature"}"] = bmeTemp_${inst};`);
+        readBlocks.push(`    dataObj["${s.fields?.humidity || "humidity"}"] = bmeHum_${inst};`);
+        readBlocks.push(`    dataObj["${s.fields?.pressure || "pressure"}"] = bmePress_${inst};`);
+        if ((s.fields?.temperature || "temperature") !== "temperature") {
+          readBlocks.push(`    dataObj["temperature"] = bmeTemp_${inst};`);
+        }
+        if ((s.fields?.humidity || "humidity") !== "humidity") {
+          readBlocks.push(`    dataObj["humidity"] = bmeHum_${inst};`);
+        }
+        if ((s.fields?.pressure || "pressure") !== "pressure") {
+          readBlocks.push(`    dataObj["pressure"] = bmePress_${inst};`);
+        }
         break;
       }
 
@@ -408,12 +453,16 @@ void transmitSensorTelemetry() {
   Serial.println(F("\\n------------------------------------------"));
   Serial.println(F("[SAMPLING] Reading all active sensors..."));
 
-  // Prepare JSON Document
+  // Prepare JSON Document (Compatible with ArduinoJson v6 & v7)
+#if defined(ARDUINOJSON_VERSION_MAJOR) && ARDUINOJSON_VERSION_MAJOR >= 7
+  JsonDocument doc;
+  JsonObject dataObj = doc["data"].to<JsonObject>();
+#else
   StaticJsonDocument<768> doc;
+  JsonObject dataObj = doc.createNestedObject("data");
+#endif
   doc["device_id"] = DEVICE_ID;
   doc["api_key"]   = API_KEY;
-
-  JsonObject dataObj = doc.createNestedObject("data");
 
 ${readBlocks.join("\n\n")}
 
@@ -521,6 +570,10 @@ export function generatePythonCode({
         readBlocks.push(`            if temp_${inst} is not None and hum_${inst} is not None:`);
         readBlocks.push(`                data_payload["${s.fields?.temperature || "temperature"}"] = round(temp_${inst}, 1)`);
         readBlocks.push(`                data_payload["${s.fields?.humidity || "humidity"}"] = round(hum_${inst}, 1)`);
+        readBlocks.push(`                if "${s.fields?.temperature || "temperature"}" != "temperature":`);
+        readBlocks.push(`                    data_payload["temperature"] = round(temp_${inst}, 1)`);
+        readBlocks.push(`                if "${s.fields?.humidity || "humidity"}" != "humidity":`);
+        readBlocks.push(`                    data_payload["humidity"] = round(hum_${inst}, 1)`);
         readBlocks.push(`                print(f"[DHT22] Temp: {temp_${inst}}°C, Humidity: {hum_${inst}}%")`);
         readBlocks.push(`        except RuntimeError as e:`);
         readBlocks.push(`            print(f"[WARN] DHT read error (retrying next cycle): {e}")`);
@@ -538,6 +591,8 @@ export function generatePythonCode({
         readBlocks.push(`            raw_light = i2c_bus.read_i2c_block_data(BH1750_ADDR, 0x20, 2)`);
         readBlocks.push(`            lux = round(((raw_light[0] << 8) + raw_light[1]) / 1.2, 1)`);
         readBlocks.push(`            data_payload["${s.fields?.lux || "lux"}"] = lux`);
+        readBlocks.push(`            if "${s.fields?.lux || "lux"}" != "lux":`);
+        readBlocks.push(`                data_payload["lux"] = lux`);
         readBlocks.push(`            print(f"[BH1750] Light: {lux} lx")`);
         readBlocks.push(`        except Exception as e:`);
         readBlocks.push(`            print(f"[ERROR] BH1750 I2C error: {e}")`);
@@ -552,6 +607,8 @@ export function generatePythonCode({
         readBlocks.push(`        try:`);
         readBlocks.push(`            probe_temp = round(ds18b20_sensor.get_temperature(), 2)`);
         readBlocks.push(`            data_payload["${s.fields?.temperature || "temperature"}"] = probe_temp`);
+        readBlocks.push(`            if "${s.fields?.temperature || "temperature"}" != "temperature":`);
+        readBlocks.push(`                data_payload["temperature"] = probe_temp`);
         readBlocks.push(`            print(f"[DS18B20] Probe Temp: {probe_temp}°C")`);
         readBlocks.push(`        except Exception as e:`);
         readBlocks.push(`            print(f"[ERROR] DS18B20 1-Wire error: {e}")`);
@@ -567,10 +624,19 @@ export function generatePythonCode({
 
         readBlocks.push(`        # Read BME280 Environmental`);
         readBlocks.push(`        try:`);
-        readBlocks.push(`            data_payload["${s.fields?.temperature || "temperature"}"] = round(bme280_sensor.temperature, 1)`);
-        readBlocks.push(`            data_payload["${s.fields?.humidity || "humidity"}"] = round(bme280_sensor.humidity, 1)`);
-        readBlocks.push(`            data_payload["${s.fields?.pressure || "pressure"}"] = round(bme280_sensor.pressure, 1)`);
-        readBlocks.push(`            print(f"[BME280] T: {bme280_sensor.temperature:.1f}°C, H: {bme280_sensor.humidity:.1f}%, P: {bme280_sensor.pressure:.1f}hPa")`);
+        readBlocks.push(`            t_val = round(bme280_sensor.temperature, 1)`);
+        readBlocks.push(`            h_val = round(bme280_sensor.humidity, 1)`);
+        readBlocks.push(`            p_val = round(bme280_sensor.pressure, 1)`);
+        readBlocks.push(`            data_payload["${s.fields?.temperature || "temperature"}"] = t_val`);
+        readBlocks.push(`            data_payload["${s.fields?.humidity || "humidity"}"] = h_val`);
+        readBlocks.push(`            data_payload["${s.fields?.pressure || "pressure"}"] = p_val`);
+        readBlocks.push(`            if "${s.fields?.temperature || "temperature"}" != "temperature":`);
+        readBlocks.push(`                data_payload["temperature"] = t_val`);
+        readBlocks.push(`            if "${s.fields?.humidity || "humidity"}" != "humidity":`);
+        readBlocks.push(`                data_payload["humidity"] = h_val`);
+        readBlocks.push(`            if "${s.fields?.pressure || "pressure"}" != "pressure":`);
+        readBlocks.push(`                data_payload["pressure"] = p_val`);
+        readBlocks.push(`            print(f"[BME280] T: {t_val}°C, H: {h_val}%, P: {p_val}hPa")`);
         readBlocks.push(`        except Exception as e:`);
         readBlocks.push(`            print(f"[ERROR] BME280 error: {e}")`);
         break;
