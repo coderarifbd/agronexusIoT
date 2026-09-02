@@ -115,6 +115,7 @@ export const api = {
   // Custom Dashboard Widgets
   getWidgets: (channelId) => request(`/dashboards/channel/${channelId}/widgets`),
   addWidget: (channelId, data) => request(`/dashboards/channel/${channelId}/widgets`, { method: "POST", body: JSON.stringify(data) }),
+  createWidget: (channelId, data) => request(`/dashboards/channel/${channelId}/widgets`, { method: "POST", body: JSON.stringify(data) }),
   updateWidget: (id, data) => request(`/dashboards/widgets/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteWidget: (id) => request(`/dashboards/widgets/${id}`, { method: "DELETE" }),
   getPublicDashboard: (slug, password) => request(`/dashboards/public/${slug}${password ? `?password=${encodeURIComponent(password)}` : ""}`),

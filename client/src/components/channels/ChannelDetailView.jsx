@@ -1142,6 +1142,7 @@ export function ChannelDetailView({ channelId, onBack }) {
           setShowAddWidgetModal(false);
           setEditingWidget(null);
         }}
+        channel={ch}
         channelId={ch.id}
         fields={fields}
         editWidget={editingWidget}

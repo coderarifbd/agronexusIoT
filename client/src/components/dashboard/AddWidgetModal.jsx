@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { api } from "../../services/api";
 import { X, HelpCircle } from "lucide-react";
 
-export function AddWidgetModal({ isOpen, onClose, channel, fields = [], onWidgetAdded, editWidget = null }) {
+export function AddWidgetModal({ isOpen, onClose, channel, channelId, fields = [], onWidgetAdded, editWidget = null }) {
   const [step, setStep] = useState(1);
   const [selectedWidget, setSelectedWidget] = useState("gauge");
 
@@ -41,10 +41,8 @@ export function AddWidgetModal({ isOpen, onClose, channel, fields = [], onWidget
       setTickInterval(cfg.tickInterval !== undefined ? String(cfg.tickInterval) : "10");
       setUpdateInterval(cfg.updateInterval !== undefined ? String(cfg.updateInterval) : "15");
 
-      if (cfg.ranges && Array.isArray(cfg.ranges) && cfg.ranges.length > 0) {
+      if (Array.isArray(cfg.ranges) && cfg.ranges.length > 0) {
         setRanges(cfg.ranges.map((r, i) => ({ id: i + 1, ...r })));
-      } else {
-        setRanges([{ id: 1, from: "90", to: "100", color: "#d62020" }]);
       }
     } else {
       setStep(1);
@@ -59,24 +57,20 @@ export function AddWidgetModal({ isOpen, onClose, channel, fields = [], onWidget
       setUpdateInterval("15");
       setRanges([{ id: 1, from: "90", to: "100", color: "#d62020" }]);
     }
-  }, [editWidget, isOpen]);
+  }, [editWidget, isOpen, fields]);
 
   if (!isOpen) return null;
 
-  function handleNext() {
-    if (!name) {
-      if (selectedWidget === "gauge") setName("Gauge");
-      else if (selectedWidget === "numeric") setName("Numeric Display");
-      else if (selectedWidget === "lamp") setName("Lamp Indicator");
-      else if (selectedWidget === "image") setName("Image Display");
-    }
+  function handleSelectWidget(type) {
+    setSelectedWidget(type);
+    setName(type === "gauge" ? "Gauge" : type === "numeric" ? "Numeric Display" : type === "lamp" ? "Lamp Indicator" : "Image Display");
     setStep(2);
   }
 
   function handleAddRange() {
     setRanges([
       ...ranges,
-      { id: Date.now(), from: "0", to: "50", color: "#f59e0b" }
+      { id: Date.now(), from: "0", to: "50", color: "#137f3a" }
     ]);
   }
 
@@ -90,7 +84,12 @@ export function AddWidgetModal({ isOpen, onClose, channel, fields = [], onWidget
 
   async function handleSaveWidget(e) {
     e.preventDefault();
-    if (!channel?.id) return;
+    const targetChannelId = channel?.id || channelId || (typeof channel === "string" ? channel : null);
+    if (!targetChannelId) {
+      console.error("No channel specified for widget");
+      alert("Channel identifier is missing. Please reopen the channel.");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -108,15 +107,18 @@ export function AddWidgetModal({ isOpen, onClose, channel, fields = [], onWidget
         }))
       };
 
+      const widgetTitle = name && name.trim() ? name.trim() : (selectedWidget === "gauge" ? "Gauge" : selectedWidget === "numeric" ? "Numeric Display" : "Widget");
+
       if (isEditMode) {
         await api.updateWidget(editWidget.id, {
-          title: name,
+          title: widgetTitle,
           field_key: fieldKey,
           config: configObj
         });
       } else {
-        await api.createWidget(channel.id, {
-          title: name,
+        const createFn = api.createWidget || api.addWidget;
+        await createFn(targetChannelId, {
+          title: widgetTitle,
           widget_type: selectedWidget,
           field_key: fieldKey,
           config: configObj
@@ -127,6 +129,7 @@ export function AddWidgetModal({ isOpen, onClose, channel, fields = [], onWidget
       handleClose();
     } catch (err) {
       console.error("Failed to save widget:", err);
+      alert("Failed to save widget: " + (err.message || err));
     } finally {
       setLoading(false);
     }
