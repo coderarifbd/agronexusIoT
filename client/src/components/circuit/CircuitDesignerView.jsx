@@ -237,51 +237,7 @@ export const COMPONENT_CATALOG = [
   }
 ];
 
-// Pre-built Starter Templates
-export const CIRCUIT_TEMPLATES = [
-  {
-    id: "smart_farm_starter",
-    title: "ESP32 Smart Agriculture Station",
-    subtitle: "ESP32 + Capacitive Soil Moisture + DHT22 Temp/Humidity + 5V Water Pump Relay",
-    board: "esp32",
-    components: [
-      { instanceId: "esp32_1", type: "esp32", x: 80, y: 80, label: "ESP32 Controller" },
-      { instanceId: "soil_1", type: "soil_moisture", x: 380, y: 60, label: "Soil Sensor" },
-      { instanceId: "dht_1", type: "dht22", x: 380, y: 220, label: "Air Temp/Hum" },
-      { instanceId: "relay_1", type: "relay", x: 380, y: 380, label: "Pump Relay" }
-    ],
-    wires: [
-      { id: "w1", fromComp: "esp32_1", fromPin: "3v3", toComp: "soil_1", toPin: "vcc", color: "#ef4444" },
-      { id: "w2", fromComp: "esp32_1", fromPin: "gnd1", toComp: "soil_1", toPin: "gnd", color: "#1e293b" },
-      { id: "w3", fromComp: "esp32_1", fromPin: "d34", toComp: "soil_1", toPin: "aout", color: "#f59e0b" },
-      { id: "w4", fromComp: "esp32_1", fromPin: "3v3", toComp: "dht_1", toPin: "vcc", color: "#ef4444" },
-      { id: "w5", fromComp: "esp32_1", fromPin: "gnd2", toComp: "dht_1", toPin: "gnd", color: "#1e293b" },
-      { id: "w6", fromComp: "esp32_1", fromPin: "d4", toComp: "dht_1", toPin: "data", color: "#3b82f6" },
-      { id: "w7", fromComp: "esp32_1", fromPin: "vin", toComp: "relay_1", toPin: "vcc", color: "#ef4444" },
-      { id: "w8", fromComp: "esp32_1", fromPin: "gnd2", toComp: "relay_1", toPin: "gnd", color: "#1e293b" },
-      { id: "w9", fromComp: "esp32_1", fromPin: "d5", toComp: "relay_1", toPin: "in", color: "#3b82f6" }
-    ]
-  },
-  {
-    id: "arduino_hydroponics",
-    title: "Arduino Smart Hydroponics Lab",
-    subtitle: "Arduino Uno + HC-SR04 Tank Level + OLED I2C Display + Relay",
-    board: "arduino_uno",
-    components: [
-      { instanceId: "uno_1", type: "arduino_uno", x: 80, y: 80, label: "Arduino Uno" },
-      { instanceId: "sonar_1", type: "ultrasonic", x: 390, y: 70, label: "Water Level" },
-      { instanceId: "oled_1", type: "oled", x: 390, y: 250, label: "OLED Monitor" }
-    ],
-    wires: [
-      { id: "w1", fromComp: "uno_1", fromPin: "5v", toComp: "sonar_1", toPin: "vcc", color: "#ef4444" },
-      { id: "w2", fromComp: "uno_1", fromPin: "gnd1", toComp: "sonar_1", toPin: "gnd", color: "#1e293b" },
-      { id: "w3", fromComp: "uno_1", fromPin: "d9", toComp: "sonar_1", toPin: "trig", color: "#3b82f6" },
-      { id: "w4", fromComp: "uno_1", fromPin: "d10", toComp: "sonar_1", toPin: "echo", color: "#10b981" },
-      { id: "w5", fromComp: "uno_1", fromPin: "a4", toComp: "oled_1", toPin: "sda", color: "#8b5cf6" },
-      { id: "w6", fromComp: "uno_1", fromPin: "a5", toComp: "oled_1", toPin: "scl", color: "#06b6d4" }
-    ]
-  }
-];
+
 
 export function CircuitDesignerView({ onNavigateToCodeGen }) {
   // Mode: 'home' (matching user reference image) or 'workspace' (active canvas)
@@ -312,20 +268,9 @@ export function CircuitDesignerView({ onNavigateToCodeGen }) {
   // HOME ACTIONS
   // --------------------------------------------------------------------------
   function handleStartFromScratch() {
-    setActiveProjectName("New Circuit Project");
-    // Add default ESP32 on the blank canvas
-    setComponents([
-      { instanceId: "esp32_" + Date.now(), type: "esp32", x: 120, y: 100, label: "ESP32 Controller" }
-    ]);
+    setActiveProjectName("Untitled Circuit Project");
+    setComponents([]);
     setWires([]);
-    setPendingPin(null);
-    setViewMode("workspace");
-  }
-
-  function handleLoadTemplate(template) {
-    setActiveProjectName(template.title);
-    setComponents(template.components);
-    setWires(template.wires);
     setPendingPin(null);
     setViewMode("workspace");
   }
@@ -524,10 +469,9 @@ export function CircuitDesignerView({ onNavigateToCodeGen }) {
           </div>
         </div>
 
-        {/* Action Cards Grid matching reference image */}
+        {/* Action Cards Container - Only Start From Scratch */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          
-          {/* Card 1: Start From Scratch (Replicating media_1788361544544.png) */}
+          {/* Card: Start From Scratch */}
           <button
             onClick={handleStartFromScratch}
             className="group text-left p-8 bg-gradient-to-b from-[#f0f7ff] to-[#e6f1fe] dark:from-[#0d1829] dark:to-[#09121f] border border-[#d1e5ff] dark:border-[#1e3454] hover:border-indigo-400 dark:hover:border-indigo-500/80 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer min-h-[260px]"
@@ -542,59 +486,6 @@ export function CircuitDesignerView({ onNavigateToCodeGen }) {
               Create a new circuit from a blank canvas
             </p>
           </button>
-
-          {/* Starter Kit Templates */}
-          {CIRCUIT_TEMPLATES.map(tmpl => (
-            <div
-              key={tmpl.id}
-              onClick={() => handleLoadTemplate(tmpl)}
-              className="group p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/60 dark:hover:border-emerald-500/60 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-200 flex flex-col justify-between cursor-pointer min-h-[260px]"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                    <CircuitBoard className="w-5 h-5" />
-                  </div>
-                  <span className="text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">
-                    Template
-                  </span>
-                </div>
-                <h3 className="font-bold text-slate-900 dark:text-white text-base group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                  {tmpl.title}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                  {tmpl.subtitle}
-                </p>
-              </div>
-
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                <span>{tmpl.components.length} components • {tmpl.wires.length} wires</span>
-                <span className="group-hover:translate-x-1 transition-transform">Open &rarr;</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Feature Highlights Section */}
-        <div className="mt-12 p-6 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-3xl">
-          <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-indigo-500" />
-            Cirkit Designer Features
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-slate-600 dark:text-slate-400">
-            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
-              <div className="font-bold text-slate-900 dark:text-white mb-1">Interactive Pin-to-Pin Wiring</div>
-              Draw colorful SVG wires with automatic power, ground, and I2C signal classification.
-            </div>
-            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
-              <div className="font-bold text-slate-900 dark:text-white mb-1">Live Connection Table</div>
-              Real-time pinout table ready for hardware assembly and bench testing.
-            </div>
-            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
-              <div className="font-bold text-slate-900 dark:text-white mb-1">One-Click Code Generation</div>
-              Exports your wired microcontroller and sensors directly to the AgroNexus Code Generator.
-            </div>
-          </div>
         </div>
       </div>
     );
