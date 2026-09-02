@@ -6,6 +6,7 @@ import {
   Cpu,
   UserCheck,
   Terminal,
+  CircuitBoard,
   LogOut
 } from "lucide-react";
 
@@ -17,6 +18,7 @@ export function Sidebar({ currentTab, setCurrentTab }) {
     { id: "channels", name: "My Channels", icon: Radio },
     { id: "devices", name: "IoT Devices Fleet", icon: Cpu },
     { id: "codegen", name: "Code Generator", icon: Terminal, badge: "NEW" },
+    { id: "circuit", name: "Cirkit Design", icon: CircuitBoard, badge: "IDE" },
     { id: "profile", name: "Security & Profile", icon: UserCheck }
   ];
 

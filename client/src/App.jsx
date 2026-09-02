@@ -17,6 +17,7 @@ import { DevicesView } from "./components/devices/DevicesView";
 import { ProfileView } from "./components/profile/ProfileView";
 import { AIAssistantModal } from "./components/ai/AIAssistantModal";
 import { CodeGeneratorView } from "./components/codegen/CodeGeneratorView";
+import { CircuitDesignerView } from "./components/circuit/CircuitDesignerView";
 
 import { AlertTriangle, X, RefreshCw } from "lucide-react";
 
@@ -176,6 +177,11 @@ function MainApp() {
                 prefill={codegenPrefill}
                 onNavigateToDevices={() => navigateTo("devices")}
                 onNavigateToChannels={() => navigateTo("channels")}
+              />
+            )}
+            {currentTab === "circuit" && (
+              <CircuitDesignerView
+                onNavigateToCodeGen={handleOpenCodeGen}
               />
             )}
             {currentTab === "profile" && (

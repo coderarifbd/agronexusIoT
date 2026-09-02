@@ -23,7 +23,8 @@ import {
   LogOut,
   Folder,
   ArrowLeft,
-  Terminal
+  Terminal,
+  CircuitBoard
 } from "lucide-react";
 
 export function Navbar({ onOpenAI, onOpenAlerts, onOpenActivity, onOpenSimulator, currentTab, setCurrentTab, onBack, canGoBack }) {
@@ -63,6 +64,7 @@ export function Navbar({ onOpenAI, onOpenAlerts, onOpenActivity, onOpenSimulator
     { id: "channels", name: "My Channels", icon: Radio },
     { id: "devices", name: "IoT Devices Fleet", icon: Cpu },
     { id: "codegen", name: "Code Generator", icon: Terminal },
+    { id: "circuit", name: "Cirkit Design", icon: CircuitBoard },
     { id: "profile", name: "Security & Profile", icon: UserCheck }
   ];
 
