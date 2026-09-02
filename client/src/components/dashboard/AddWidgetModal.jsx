@@ -1,50 +1,48 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../../services/api";
-import { X, HelpCircle, Plus } from "lucide-react";
+import { X, HelpCircle } from "lucide-react";
 
-export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidgetAdded, editWidget = null }) {
-  const isEditMode = Boolean(editWidget);
-  const [step, setStep] = useState(isEditMode ? 2 : 1);
-  const [selectedWidget, setSelectedWidget] = useState(editWidget?.widget_type || "gauge");
+export function AddWidgetModal({ isOpen, onClose, channel, fields = [], onWidgetAdded, editWidget = null }) {
+  const [step, setStep] = useState(1);
+  const [selectedWidget, setSelectedWidget] = useState("gauge");
 
-  // Step 2: Configure Widget Parameters (Matches media_1788286537227.png)
+  // Step 2 Form State
   const [name, setName] = useState("");
-  const [fieldKey, setFieldKey] = useState("field1");
+  const [fieldKey, setFieldKey] = useState(fields[0]?.field_key || "field1");
   const [minVal, setMinVal] = useState("0");
   const [maxVal, setMaxVal] = useState("100");
   const [displayValue, setDisplayValue] = useState(true);
   const [units, setUnits] = useState("");
   const [tickInterval, setTickInterval] = useState("10");
   const [updateInterval, setUpdateInterval] = useState("15");
+
+  // Threshold Ranges: default 90-100 red (like ThingSpeak)
   const [ranges, setRanges] = useState([
     { id: 1, from: "90", to: "100", color: "#d62020" }
   ]);
 
-  const [loading, setLoading] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const isEditMode = Boolean(editWidget);
 
   useEffect(() => {
     if (editWidget) {
       setStep(2);
       setSelectedWidget(editWidget.widget_type || "gauge");
       setName(editWidget.title || "");
-      setFieldKey(editWidget.field_key || "field1");
+      setFieldKey(editWidget.field_key || fields[0]?.field_key || "field1");
 
-      const cfg = typeof editWidget.config === "string" ? JSON.parse(editWidget.config || "{}") : (editWidget.config || editWidget.config_json ? (typeof editWidget.config_json === "string" ? JSON.parse(editWidget.config_json) : editWidget.config_json) : {});
+      const cfg = editWidget.config || {};
       setMinVal(cfg.min !== undefined ? String(cfg.min) : "0");
       setMaxVal(cfg.max !== undefined ? String(cfg.max) : "100");
       setDisplayValue(cfg.displayValue !== undefined ? cfg.displayValue : true);
-      setUnits(cfg.units || cfg.unit || "");
+      setUnits(cfg.units || "");
       setTickInterval(cfg.tickInterval !== undefined ? String(cfg.tickInterval) : "10");
       setUpdateInterval(cfg.updateInterval !== undefined ? String(cfg.updateInterval) : "15");
 
       if (cfg.ranges && Array.isArray(cfg.ranges) && cfg.ranges.length > 0) {
-        setRanges(cfg.ranges.map((r, i) => ({
-          id: i + 1,
-          from: String(r.from !== undefined ? r.from : 0),
-          to: String(r.to !== undefined ? r.to : 100),
-          color: r.color || "#d62020"
-        })));
+        setRanges(cfg.ranges.map((r, i) => ({ id: i + 1, ...r })));
       } else {
         setRanges([{ id: 1, from: "90", to: "100", color: "#d62020" }]);
       }
@@ -92,35 +90,36 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
 
   async function handleSaveWidget(e) {
     e.preventDefault();
-    setLoading(true);
+    if (!channel?.id) return;
+
     try {
-      const widgetPayload = {
-        title: name || (selectedWidget === "gauge" ? "Gauge" : selectedWidget === "numeric" ? "Numeric Display" : selectedWidget === "lamp" ? "Lamp Indicator" : "Image Display"),
-        widget_type: selectedWidget,
-        field_key: fieldKey,
-        chart_type: "widget",
-        config: {
-          min: Number(minVal) || 0,
-          max: Number(maxVal) || 100,
-          displayValue,
-          units: units.trim(),
-          tickInterval: Number(tickInterval) || 10,
-          updateInterval: Number(updateInterval) || 15,
-          ranges: ranges.map(r => ({
-            from: Number(r.from) || 0,
-            to: Number(r.to) || 0,
-            color: r.color || "#d62020"
-          }))
-        }
+      setLoading(true);
+      const configObj = {
+        min: Number(minVal) || 0,
+        max: Number(maxVal) || 100,
+        displayValue: Boolean(displayValue),
+        units: units || "",
+        tickInterval: Number(tickInterval) || 10,
+        updateInterval: Number(updateInterval) || 15,
+        ranges: ranges.map((r) => ({
+          from: Number(r.from) || 0,
+          to: Number(r.to) || 0,
+          color: r.color || "#d62020"
+        }))
       };
 
-      if (isEditMode && editWidget?.id) {
-        await api.updateWidget(editWidget.id, widgetPayload);
+      if (isEditMode) {
+        await api.updateWidget(editWidget.id, {
+          title: name,
+          field_key: fieldKey,
+          config: configObj
+        });
       } else {
-        await api.addWidget(channelId, {
-          ...widgetPayload,
-          grid_w: 6,
-          grid_h: 4
+        await api.createWidget(channel.id, {
+          title: name,
+          widget_type: selectedWidget,
+          field_key: fieldKey,
+          config: configObj
         });
       }
 
@@ -142,7 +141,7 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
       id: "gauge",
       title: "Gauge",
       renderGraphic: (
-        <svg viewBox="0 0 100 100" className="w-16 h-16 mx-auto my-1">
+        <svg viewBox="0 0 100 100" className="w-14 h-14 mx-auto">
           <circle cx="50" cy="50" r="42" fill="#fff" stroke="#cbd5e1" strokeWidth="1.5" />
           <path d="M 22 70 A 35 35 0 1 1 78 70" fill="none" stroke="#94a3b8" strokeWidth="1.5" />
           <text x="23" y="70" fontSize="6.5" fill="#64748b" textAnchor="middle" fontFamily="sans-serif">0</text>
@@ -158,11 +157,11 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
       id: "numeric",
       title: "Numeric Display",
       renderGraphic: (
-        <div className="w-full flex flex-col items-center justify-center h-16">
-          <div className="border border-slate-300 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-950/70 rounded px-3 py-0.5 font-mono text-sm text-slate-500 tracking-wider">
+        <div className="w-full flex flex-col items-center justify-center">
+          <div className="border border-slate-300 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-950/70 rounded px-2.5 py-0.5 font-mono text-xs text-slate-500 tracking-wider">
             1516.12
           </div>
-          <span className="text-[9px] font-mono text-slate-400 mt-0.5 uppercase tracking-widest">
+          <span className="text-[8px] font-mono text-slate-400 mt-0.5 uppercase tracking-widest">
             DB
           </span>
         </div>
@@ -172,9 +171,9 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
       id: "lamp",
       title: "Lamp Indicator",
       renderGraphic: (
-        <div className="w-full flex items-center justify-center h-16">
-          <div className="w-14 h-14 rounded-full border-2 border-slate-200 dark:border-slate-700 bg-gradient-to-b from-white via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-800 dark:to-slate-900 shadow-sm flex items-center justify-center">
-            <div className="w-9 h-9 rounded-full border border-slate-300 dark:border-slate-600 bg-gradient-to-tr from-slate-100 to-white dark:from-slate-800 dark:to-slate-700 shadow-inner" />
+        <div className="w-full flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full border-2 border-slate-200 dark:border-slate-700 bg-gradient-to-b from-white via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-800 dark:to-slate-900 shadow-sm flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full border border-slate-300 dark:border-slate-600 bg-gradient-to-tr from-slate-100 to-white dark:from-slate-800 dark:to-slate-700 shadow-inner" />
           </div>
         </div>
       )
@@ -183,8 +182,8 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
       id: "image",
       title: "Image Display",
       renderGraphic: (
-        <div className="w-full flex items-center justify-center h-16 text-slate-400">
-          <svg viewBox="0 0 24 24" className="w-10 h-10" fill="currentColor">
+        <div className="w-full flex items-center justify-center text-slate-400">
+          <svg viewBox="0 0 24 24" className="w-9 h-9" fill="currentColor">
             <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z" />
           </svg>
         </div>
@@ -193,12 +192,12 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      {/* Dynamic width container that tightly wraps content */}
-      <div className={`w-full ${step === 1 ? "max-w-md" : "max-w-lg"} max-h-[92vh] flex flex-col bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-2xl overflow-hidden transition-all text-slate-800 dark:text-slate-200 text-xs`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-sm animate-fadeIn">
+      {/* Tight Content-Fitted Container in Middle without Extra Space */}
+      <div className={`w-full ${step === 1 ? "max-w-[530px]" : "max-w-[480px]"} bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-2xl overflow-hidden transition-all text-slate-800 dark:text-slate-200 text-xs`}>
         {/* Modal Top Header */}
-        <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-slate-200 dark:border-slate-800 shrink-0">
-          <h2 className="text-sm sm:text-base font-normal text-slate-800 dark:text-white tracking-tight">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 shrink-0">
+          <h2 className="text-sm font-normal text-slate-800 dark:text-white tracking-tight">
             {step === 1 ? "Click on a widget to add it to the Channel" : "Configure widget parameters"}
           </h2>
           <div className="flex items-center gap-2">
@@ -206,7 +205,7 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
               <button
                 type="button"
                 onClick={() => setShowHelp(!showHelp)}
-                className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 p-1 cursor-pointer"
+                className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 p-0.5 cursor-pointer"
                 title="Help"
               >
                 <HelpCircle className="w-3.5 h-3.5" />
@@ -214,17 +213,17 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
             )}
             <button
               onClick={handleClose}
-              className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
+              className="p-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Modal Step 1: Choose Widget (Snug 2x2 grid) */}
+        {/* Modal Step 1: Choose Widget (Authentic 3-Column Grid matching media_1788286440379.png) */}
         {step === 1 && (
-          <div className="p-4 sm:p-5 space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+          <div className="p-3.5 space-y-3">
+            <div className="grid grid-cols-3 gap-2.5">
               {widgetsList.map((w) => {
                 const isSelected = selectedWidget === w.id;
                 return (
@@ -233,21 +232,21 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
                     onClick={() => setSelectedWidget(w.id)}
                     className={`rounded border overflow-hidden cursor-pointer transition-all duration-150 ${
                       isSelected
-                        ? "border-[#337ab7] ring-2 ring-[#337ab7]/40 shadow-sm"
+                        ? "border-[#2b729f] ring-1 ring-[#2b729f] shadow-sm"
                         : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600"
                     }`}
                   >
                     {/* Header Banner */}
                     <div
-                      className={`px-2.5 py-1 text-[11px] font-semibold text-white transition-colors ${
-                        isSelected ? "bg-[#337ab7]" : "bg-[#8bb5d3] dark:bg-slate-800"
+                      className={`px-2 py-1 text-[11px] font-semibold text-white transition-colors truncate ${
+                        isSelected ? "bg-[#24638c]" : "bg-[#7ba3c2] dark:bg-slate-800"
                       }`}
                     >
                       {w.title}
                     </div>
 
                     {/* Graphic Box */}
-                    <div className="bg-white dark:bg-slate-900 p-1.5 flex items-center justify-center">
+                    <div className="bg-white dark:bg-slate-900 h-[80px] flex items-center justify-center p-1">
                       {w.renderGraphic}
                     </div>
                   </div>
@@ -256,7 +255,7 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
             </div>
 
             {/* Footer Buttons */}
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <div className="flex items-center justify-end gap-2 pt-2.5 border-t border-slate-200 dark:border-slate-800">
               <button
                 type="button"
                 onClick={handleNext}
@@ -277,7 +276,7 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
 
         {/* Modal Step 2: Configure Widget Parameters */}
         {step === 2 && (
-          <form onSubmit={handleSaveWidget} className="p-4 sm:p-5 space-y-2.5 text-xs overflow-y-auto flex-1">
+          <form onSubmit={handleSaveWidget} className="p-3.5 space-y-2 text-xs overflow-y-auto max-h-[80vh]">
             {showHelp && (
               <div className="p-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-500/30 text-blue-800 dark:text-blue-200 text-[11px] rounded leading-relaxed">
                 Configure the measurement parameters, limits, intervals, and color threshold bands for your widget.
@@ -285,11 +284,11 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
             )}
 
             {/* 1. Name */}
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2.5 items-start sm:items-center">
-              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-12 gap-2 items-center">
+              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
                 Name
               </label>
-              <div className="sm:col-span-9">
+              <div className="col-span-9">
                 <input
                   type="text"
                   value={name}
@@ -302,11 +301,11 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
             </div>
 
             {/* 2. Field */}
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2.5 items-start sm:items-center">
-              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-12 gap-2 items-center">
+              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
                 Field
               </label>
-              <div className="sm:col-span-9">
+              <div className="col-span-9">
                 <select
                   value={fieldKey}
                   onChange={(e) => setFieldKey(e.target.value)}
@@ -326,11 +325,11 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
             </div>
 
             {/* 3. Min */}
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2.5 items-start sm:items-center">
-              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-12 gap-2 items-center">
+              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
                 Min
               </label>
-              <div className="sm:col-span-9">
+              <div className="col-span-9">
                 <input
                   type="number"
                   value={minVal}
@@ -341,11 +340,11 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
             </div>
 
             {/* 4. Max */}
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2.5 items-start sm:items-center">
-              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-12 gap-2 items-center">
+              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
                 Max
               </label>
-              <div className="sm:col-span-9">
+              <div className="col-span-9">
                 <input
                   type="number"
                   value={maxVal}
@@ -356,11 +355,11 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
             </div>
 
             {/* 5. Display Value */}
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2.5 items-center">
-              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-12 gap-2 items-center">
+              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
                 Display Value
               </label>
-              <div className="sm:col-span-9 flex items-center">
+              <div className="col-span-9 flex items-center">
                 <input
                   type="checkbox"
                   checked={displayValue}
@@ -371,11 +370,11 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
             </div>
 
             {/* 6. Units */}
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2.5 items-start sm:items-center">
-              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-12 gap-2 items-center">
+              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
                 Units
               </label>
-              <div className="sm:col-span-9">
+              <div className="col-span-9">
                 <input
                   type="text"
                   value={units}
@@ -387,11 +386,11 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
             </div>
 
             {/* 7. Tick Interval */}
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2.5 items-start sm:items-center">
-              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-12 gap-2 items-center">
+              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
                 Tick Interval
               </label>
-              <div className="sm:col-span-9">
+              <div className="col-span-9">
                 <input
                   type="number"
                   value={tickInterval}
@@ -402,11 +401,11 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
             </div>
 
             {/* 8. Update Interval */}
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2.5 items-start sm:items-center">
-              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300">
+            <div className="grid grid-cols-12 gap-2 items-center">
+              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
                 Update Interval
               </label>
-              <div className="sm:col-span-9 flex items-center gap-2">
+              <div className="col-span-9 flex items-center gap-2">
                 <input
                   type="number"
                   value={updateInterval}
@@ -418,11 +417,11 @@ export function AddWidgetModal({ isOpen, onClose, channelId, fields = [], onWidg
             </div>
 
             {/* 9. Range (Threshold color bands) */}
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2.5 items-start pt-0.5">
-              <label className="sm:col-span-3 sm:text-right font-medium text-slate-700 dark:text-slate-300 pt-1">
+            <div className="grid grid-cols-12 gap-2 items-start pt-0.5">
+              <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300 pt-1">
                 Range
               </label>
-              <div className="sm:col-span-9 space-y-1.5">
+              <div className="col-span-9 space-y-1.5">
                 {ranges.map((r) => (
                   <div key={r.id} className="flex items-center gap-1.5">
                     <input
