@@ -14,7 +14,7 @@ function generateApiKey(prefix = "AGX_KEY") {
 // Get all accessible channels across all projects for current user
 router.get("/my/all", authenticateToken, async (req, res) => {
   const userId = req.user.id;
-  const userEmail = req.user.email;
+  const userEmail = req.user.email || "";
 
   const channels = await db.all(`
     SELECT c.*, p.name as project_name, COALESCE(c.user_id, p.user_id) as owner_id
@@ -22,7 +22,7 @@ router.get("/my/all", authenticateToken, async (req, res) => {
     LEFT JOIN projects p ON c.project_id = p.id
     WHERE (c.user_id = $1 OR p.user_id = $1)
        OR EXISTS (SELECT 1 FROM channel_shares cs WHERE cs.channel_id = c.id AND LOWER(cs.user_email) = LOWER($2))
-       OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = p.id AND pm.user_id = $1)
+       OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = p.id AND LOWER(pm.user_email) = LOWER($2))
     ORDER BY c.channel_number ASC
   `, [userId, userEmail]);
 
@@ -32,7 +32,7 @@ router.get("/my/all", authenticateToken, async (req, res) => {
 // Get all channels by project (only if user has access to project or channel)
 router.get("/project/:projectId", authenticateToken, async (req, res) => {
   const userId = req.user.id;
-  const userEmail = req.user.email;
+  const userEmail = req.user.email || "";
 
   const channels = await db.all(`
     SELECT c.*, 
@@ -45,7 +45,7 @@ router.get("/project/:projectId", authenticateToken, async (req, res) => {
       AND (
         c.user_id = $2 OR p.user_id = $2
         OR EXISTS (SELECT 1 FROM channel_shares cs WHERE cs.channel_id = c.id AND LOWER(cs.user_email) = LOWER($3))
-        OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = p.id AND pm.user_id = $2)
+        OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = p.id AND LOWER(pm.user_email) = LOWER($3))
       )
     ORDER BY c.channel_number ASC
   `, [req.params.projectId, userId, userEmail]);
@@ -56,6 +56,7 @@ router.get("/project/:projectId", authenticateToken, async (req, res) => {
 // Create Channel (strict user isolation & ownership)
 router.post("/", authenticateToken, async (req, res) => {
   const userId = req.user.id;
+  const userEmail = req.user.email || "";
   let {
     project_id,
     name,
@@ -93,8 +94,8 @@ router.post("/", authenticateToken, async (req, res) => {
     project_id = userProj.id;
   } else {
     const projCheck = await db.get(`
-      SELECT id FROM projects WHERE id = $1 AND (user_id = $2 OR EXISTS (SELECT 1 FROM project_members WHERE project_id = $1 AND user_id = $2))
-    `, [project_id, userId]);
+      SELECT id FROM projects WHERE id = $1 AND (user_id = $2 OR EXISTS (SELECT 1 FROM project_members WHERE project_id = $1 AND LOWER(user_email) = LOWER($3)))
+    `, [project_id, userId, userEmail]);
 
     if (!projCheck) {
       let userProj = await db.get("SELECT id FROM projects WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1", [userId]);
