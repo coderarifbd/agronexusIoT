@@ -26,7 +26,9 @@ import {
   AlertCircle,
   ArrowLeft,
   Terminal,
-  Sparkles
+  Sparkles,
+  FileText,
+  FileSpreadsheet
 } from "lucide-react";
 
 export function ChannelDetailView({ channelId, onBack, onNavigateToCodeGen }) {
@@ -231,6 +233,12 @@ export function ChannelDetailView({ channelId, onBack, onNavigateToCodeGen }) {
   function handleDownloadExportCsv() {
     if (!channelData?.channel?.id) return;
     const url = `/api/telemetry/channel/${channelData.channel.id}/export?format=csv&timezone=${encodeURIComponent(exportTimezone)}`;
+    window.open(url, "_blank");
+  }
+
+  function handleDownloadExportExcel() {
+    if (!channelData?.channel?.id) return;
+    const url = `/api/telemetry/channel/${channelData.channel.id}/export?format=xlsx&timezone=${encodeURIComponent(exportTimezone)}`;
     window.open(url, "_blank");
   }
 
@@ -461,13 +469,26 @@ export function ChannelDetailView({ channelId, onBack, onNavigateToCodeGen }) {
               <span>Add Widgets</span>
             </button>
 
-            <button
-              onClick={handleDownloadExportCsv}
-              className="px-3 py-1.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-[#137f3a] dark:text-emerald-400 font-semibold rounded border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span>Export recent data</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={handleDownloadExportCsv}
+                className="px-2.5 py-1.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-[#137f3a] dark:text-emerald-400 font-semibold rounded border border-slate-300 dark:border-slate-700 flex items-center gap-1 shadow-sm transition-colors cursor-pointer text-xs"
+                title="Export all sensor data as CSV"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Export CSV</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadExportExcel}
+                className="px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-semibold rounded border border-emerald-300 dark:border-emerald-600/30 flex items-center gap-1 shadow-sm transition-colors cursor-pointer text-xs"
+                title="Export all sensor data as Excel (.xlsx)"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Export Excel</span>
+              </button>
+            </div>
           </div>
 
           {/* Right Action Buttons */}
@@ -492,12 +513,36 @@ export function ChannelDetailView({ channelId, onBack, onNavigateToCodeGen }) {
       {/* 4. Tab 1: Private View (Field Charts Grid & Custom Widgets) */}
       {activeTab === "private" && (
         <div className="space-y-4 pt-1">
-          {/* Channel Stats: Compact Inline Bar */}
-          <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 py-0.5">
-            <span className="font-semibold text-slate-700 dark:text-slate-300">Channel Stats:</span>
-            <span>Created: <strong className="text-slate-800 dark:text-slate-200">{stats.created}</strong></span>
-            <span>•</span>
-            <span>Entries: <strong className="font-mono text-slate-800 dark:text-slate-200">{stats.entries}</strong></span>
+          {/* Channel Stats & Quick Export Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 py-1 border-b border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-3">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Channel Stats:</span>
+              <span>Created: <strong className="text-slate-800 dark:text-slate-200">{stats.created}</strong></span>
+              <span>•</span>
+              <span>Entries: <strong className="font-mono text-slate-800 dark:text-slate-200">{stats.entries}</strong></span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-medium text-slate-500">Download All Graphs:</span>
+              <button
+                type="button"
+                onClick={handleDownloadExportCsv}
+                className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded text-[11px] transition-colors cursor-pointer flex items-center gap-1"
+                title="Download all channel feeds as CSV"
+              >
+                <FileText className="w-3 h-3 text-emerald-600" />
+                <span>CSV</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadExportExcel}
+                className="px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-400 font-bold rounded border border-emerald-300 dark:border-emerald-600/30 text-[11px] transition-colors cursor-pointer flex items-center gap-1"
+                title="Download all channel feeds as Excel (.xlsx)"
+              >
+                <FileSpreadsheet className="w-3 h-3 text-emerald-600" />
+                <span>Excel (.xlsx)</span>
+              </button>
+            </div>
           </div>
 
           {/* Channel Dashboard Visualizations & Widgets Grid (2 Columns, Side-by-Side) */}
@@ -555,6 +600,32 @@ export function ChannelDetailView({ channelId, onBack, onNavigateToCodeGen }) {
             >
               {copiedKey === "publicUrl" ? "Copied!" : "Copy Public URL"}
             </button>
+          </div>
+
+          {/* Public View Export Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 py-1 border-b border-slate-200 dark:border-slate-800">
+            <span className="font-semibold text-slate-700 dark:text-slate-300">Public Sensor Feeds</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-medium text-slate-500">Export Graphs:</span>
+              <button
+                type="button"
+                onClick={handleDownloadExportCsv}
+                className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded text-[11px] transition-colors cursor-pointer flex items-center gap-1"
+                title="Download all channel feeds as CSV"
+              >
+                <FileText className="w-3 h-3 text-emerald-600" />
+                <span>CSV</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadExportExcel}
+                className="px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-400 font-bold rounded border border-emerald-300 dark:border-emerald-600/30 text-[11px] transition-colors cursor-pointer flex items-center gap-1"
+                title="Download all channel feeds as Excel (.xlsx)"
+              >
+                <FileSpreadsheet className="w-3 h-3 text-emerald-600" />
+                <span>Excel (.xlsx)</span>
+              </button>
+            </div>
           </div>
 
           {/* Unified Public View Grid */}
@@ -1076,7 +1147,7 @@ export function ChannelDetailView({ channelId, onBack, onNavigateToCodeGen }) {
                 Export
               </h2>
               <p className="text-sm text-slate-600 dark:text-slate-400">
-                Download all of this Channel's feeds in CSV format.
+                Download all of this Channel's feeds in CSV or Excel format.
               </p>
 
               <div className="space-y-4 text-sm">
@@ -1096,13 +1167,23 @@ export function ChannelDetailView({ channelId, onBack, onNavigateToCodeGen }) {
 
                 <div className="grid grid-cols-12 gap-3 pt-1">
                   <div className="col-span-3"></div>
-                  <div className="col-span-9">
+                  <div className="col-span-9 flex flex-wrap items-center gap-3">
                     <button
                       type="button"
                       onClick={handleDownloadExportCsv}
-                      className="px-7 py-2.5 bg-[#137f3a] hover:bg-[#0f682f] text-white font-semibold text-sm rounded shadow transition-all cursor-pointer"
+                      className="px-6 py-2.5 bg-[#137f3a] hover:bg-[#0f682f] text-white font-semibold text-sm rounded shadow transition-all cursor-pointer flex items-center gap-2"
                     >
-                      Download
+                      <FileText className="w-4 h-4" />
+                      <span>Download CSV</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleDownloadExportExcel}
+                      className="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm rounded shadow transition-all cursor-pointer flex items-center gap-2"
+                    >
+                      <FileSpreadsheet className="w-4 h-4" />
+                      <span>Download Excel (.xlsx)</span>
                     </button>
                   </div>
                 </div>

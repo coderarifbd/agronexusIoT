@@ -442,6 +442,21 @@ router.get("/channel/:channelId/export", async (req, res) => {
     return res.send(csvContent);
   }
 
+  if (format === "xlsx" || format === "excel") {
+    const XLSX = await import("xlsx");
+    const worksheet = XLSX.utils.json_to_sheet(flatData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Telemetry Feeds");
+    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="channel_${channel?.channel_number || channelId}_data.xlsx"`
+    );
+    return res.send(buffer);
+  }
+
   res.json({
     channelId,
     exportedAt: new Date().toISOString(),

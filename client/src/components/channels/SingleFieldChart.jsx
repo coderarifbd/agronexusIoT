@@ -15,7 +15,8 @@ import {
 import { api } from "../../services/api";
 import { useSocket } from "../../context/SocketContext";
 import { useTheme } from "../../context/ThemeContext";
-import { ExternalLink, MessageSquare, Edit3, X, RefreshCw } from "lucide-react";
+import { ExternalLink, MessageSquare, Edit3, X, RefreshCw, FileText, FileSpreadsheet } from "lucide-react";
+import * as XLSX from "xlsx";
 import { EditChartOptionsModal } from "./EditChartOptionsModal";
 
 export function SingleFieldChart({
@@ -69,8 +70,11 @@ export function SingleFieldChart({
       if (fieldVal !== undefined && fieldVal !== null) {
         const parsed = Number(fieldVal);
         const pointVal = isNaN(parsed) ? 0 : parsed;
+        const now = new Date(stream._timestamp || Date.now());
         const point = {
-          time: new Date(stream._timestamp || Date.now()).toLocaleTimeString([], {
+          timestamp: now.toISOString(),
+          dateStr: now.toLocaleString(),
+          time: now.toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
             second: "2-digit"
@@ -100,6 +104,8 @@ export function SingleFieldChart({
 
         const d = new Date(r.timestamp);
         return {
+          timestamp: d.toISOString(),
+          dateStr: d.toLocaleString(),
           time: d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           value: val
         };
@@ -111,6 +117,65 @@ export function SingleFieldChart({
     } finally {
       setLoading(false);
     }
+  }
+
+  // Export this individual sensor graph as CSV
+  function handleExportCsv() {
+    if (!data || data.length === 0) {
+      alert("No sensor telemetry data available to export yet.");
+      return;
+    }
+
+    const fieldName = field.name || `Field ${fieldIndex + 1}`;
+    const unit = field.unit || "";
+    const channelName = channel.name || `Channel_${channel.id}`;
+
+    let csv = `Date and Time,Timestamp (ISO),Field Name,Field Key,Reading Value,Unit,Channel Name\n`;
+    data.forEach((pt) => {
+      const timeStr = pt.dateStr || pt.time || "";
+      const isoStr = pt.timestamp || "";
+      csv += `"${timeStr}","${isoStr}","${fieldName}","${field.field_key || `field${fieldIndex + 1}`}",${pt.value},"${unit}","${channelName}"\n`;
+    });
+
+    const filename = `${channelName.replace(/[^a-zA-Z0-9_-]/g, "_")}_${fieldName.replace(/[^a-zA-Z0-9_-]/g, "_")}_data.csv`;
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Export this individual sensor graph as Excel (.xlsx)
+  function handleExportExcel() {
+    if (!data || data.length === 0) {
+      alert("No sensor telemetry data available to export yet.");
+      return;
+    }
+
+    const fieldName = field.name || `Field ${fieldIndex + 1}`;
+    const unit = field.unit || "";
+    const channelName = channel.name || `Channel_${channel.id}`;
+
+    const rows = data.map((pt, idx) => ({
+      "Entry #": idx + 1,
+      "Date & Time": pt.dateStr || pt.time || "",
+      "ISO Timestamp": pt.timestamp || "",
+      "Sensor Field": fieldName,
+      "Field Key": field.field_key || `field${fieldIndex + 1}`,
+      "Reading Value": pt.value,
+      "Unit": unit,
+      "Channel Name": channelName
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    const sheetName = fieldName.slice(0, 31).replace(/[\\/?*[\]]/g, "_") || "SensorData";
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+
+    const filename = `${channelName.replace(/[^a-zA-Z0-9_-]/g, "_")}_${fieldName.replace(/[^a-zA-Z0-9_-]/g, "_")}_data.xlsx`;
+    XLSX.writeFile(workbook, filename);
   }
 
   function handleSaveChartOptions(newOptions) {
@@ -132,28 +197,51 @@ export function SingleFieldChart({
       style={{ backgroundColor: bgColor }}
       className="border border-slate-300 dark:border-slate-800 rounded shadow-sm overflow-hidden flex flex-col h-[275px] transition-colors"
     >
-      {/* Top Header Bar (Matches Image with 4 Action Icons) */}
+      {/* Top Header Bar (With 4 Action Icons + Direct CSV & Excel Export Buttons) */}
       <div className="bg-[#2a75a0] dark:bg-slate-800 text-white px-3 py-1.5 flex items-center justify-between text-xs font-semibold select-none shrink-0">
-        <span className="truncate">{headerTitle}</span>
-        <div className="flex items-center gap-2 text-white/90">
+        <span className="truncate pr-2">{headerTitle}</span>
+        <div className="flex items-center gap-1.5 text-white/90 shrink-0">
+          {/* Direct CSV & Excel Export Options for this sensor graph */}
+          <div className="flex items-center bg-black/25 dark:bg-black/40 rounded px-1 py-0.5 text-[10px] font-mono border border-white/20 shadow-inner">
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              title={`Export ${fieldLabel} data as CSV`}
+              className="px-1.5 py-0.5 hover:text-white hover:bg-white/20 rounded transition-colors font-bold cursor-pointer flex items-center gap-0.5"
+            >
+              <FileText className="w-2.5 h-2.5" />
+              <span>CSV</span>
+            </button>
+            <span className="text-white/30">|</span>
+            <button
+              type="button"
+              onClick={handleExportExcel}
+              title={`Export ${fieldLabel} data as Excel (.xlsx)`}
+              className="px-1.5 py-0.5 hover:text-white hover:bg-white/20 rounded transition-colors font-bold cursor-pointer flex items-center gap-0.5 text-emerald-200 hover:text-emerald-100"
+            >
+              <FileSpreadsheet className="w-2.5 h-2.5 text-emerald-300" />
+              <span>Excel</span>
+            </button>
+          </div>
+
           <button
             onClick={() => window.open(`/dashboard/public/${channel.public_slug || channel.id}`, "_blank")}
             title="Open in new window"
-            className="hover:text-white transition-colors cursor-pointer"
+            className="hover:text-white transition-colors cursor-pointer p-0.5"
           >
             <ExternalLink className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => alert(`Field: ${fieldLabel}\nKey: ${field.field_key || `field${fieldIndex + 1}`}`)}
             title="Field Information"
-            className="hover:text-white transition-colors cursor-pointer"
+            className="hover:text-white transition-colors cursor-pointer p-0.5"
           >
             <MessageSquare className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => setShowEditModal(true)}
             title="Edit Chart Options"
-            className="hover:text-white transition-colors cursor-pointer"
+            className="hover:text-white transition-colors cursor-pointer p-0.5"
           >
             <Edit3 className="w-3.5 h-3.5" />
           </button>
@@ -161,7 +249,7 @@ export function SingleFieldChart({
             <button
               onClick={() => onDelete(field.id)}
               title="Delete Chart"
-              className="hover:text-white transition-colors cursor-pointer"
+              className="hover:text-white transition-colors cursor-pointer p-0.5"
             >
               <X className="w-4 h-4" />
             </button>
