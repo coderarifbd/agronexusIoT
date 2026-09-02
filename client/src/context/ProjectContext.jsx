@@ -14,23 +14,27 @@ export function ProjectProvider({ children }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    setActiveProject(null);
+    setActiveChannel(null);
+    setChannels([]);
+    setProjects([]);
+    if (user?.id) {
       loadProjects();
-    } else {
-      setProjects([]);
-      setActiveProject(null);
-      setChannels([]);
-      setActiveChannel(null);
     }
-  }, [user]);
+  }, [user?.id]);
 
   async function loadProjects() {
     try {
       setLoading(true);
       const res = await api.getProjects();
-      setProjects(res.projects);
-      if (res.projects.length > 0 && !activeProject) {
-        selectProject(res.projects[0]);
+      const list = res.projects || [];
+      setProjects(list);
+      if (list.length > 0) {
+        selectProject(list[0]);
+      } else {
+        setActiveProject(null);
+        setChannels([]);
+        setActiveChannel(null);
       }
     } catch (err) {
       console.error("Failed to load projects:", err);
@@ -40,6 +44,12 @@ export function ProjectProvider({ children }) {
   }
 
   async function selectProject(proj) {
+    if (!proj) {
+      setActiveProject(null);
+      setChannels([]);
+      setActiveChannel(null);
+      return;
+    }
     setActiveProject(proj);
     try {
       const res = await api.getProject(proj.id);

@@ -11,39 +11,52 @@ function generateApiKey(prefix = "AGX_KEY") {
   return `${prefix}_${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
 }
 
-// Get all accessible channels across all projects
+// Get all accessible channels across all projects for current user
 router.get("/my/all", authenticateToken, async (req, res) => {
   const userId = req.user.id;
   const userEmail = req.user.email;
 
   const channels = await db.all(`
-    SELECT c.*, p.name as project_name, p.user_id as owner_id
+    SELECT c.*, p.name as project_name, COALESCE(c.user_id, p.user_id) as owner_id
     FROM channels c
     LEFT JOIN projects p ON c.project_id = p.id
+    WHERE (c.user_id = $1 OR p.user_id = $1)
+       OR EXISTS (SELECT 1 FROM channel_shares cs WHERE cs.channel_id = c.id AND LOWER(cs.user_email) = LOWER($2))
+       OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = p.id AND pm.user_id = $1)
     ORDER BY c.channel_number ASC
-  `);
+  `, [userId, userEmail]);
 
   res.json({ channels });
 });
 
-// Get all channels by project
+// Get all channels by project (only if user has access to project or channel)
 router.get("/project/:projectId", authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  const userEmail = req.user.email;
+
   const channels = await db.all(`
     SELECT c.*, 
       (SELECT COUNT(*) FROM channel_fields WHERE channel_id = c.id) as field_count,
       (SELECT COUNT(*) FROM devices WHERE channel_id = c.id) as device_count,
       (SELECT COUNT(*) FROM actuators WHERE channel_id = c.id) as actuator_count
     FROM channels c
+    LEFT JOIN projects p ON c.project_id = p.id
     WHERE c.project_id = $1
+      AND (
+        c.user_id = $2 OR p.user_id = $2
+        OR EXISTS (SELECT 1 FROM channel_shares cs WHERE cs.channel_id = c.id AND LOWER(cs.user_email) = LOWER($3))
+        OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = p.id AND pm.user_id = $2)
+      )
     ORDER BY c.channel_number ASC
-  `, [req.params.projectId]);
+  `, [req.params.projectId, userId, userEmail]);
 
   res.json({ channels });
 });
 
-// Create Channel
+// Create Channel (strict user isolation & ownership)
 router.post("/", authenticateToken, async (req, res) => {
-  const {
+  const userId = req.user.id;
+  let {
     project_id,
     name,
     description,
@@ -64,8 +77,35 @@ router.post("/", authenticateToken, async (req, res) => {
     fields
   } = req.body;
 
-  if (!project_id || !name) {
-    return res.status(400).json({ error: "Project ID and Channel name are required." });
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: "Channel name is required." });
+  }
+
+  // Ensure project_id belongs to current user or fallback to user's own project
+  if (!project_id) {
+    let userProj = await db.get("SELECT id FROM projects WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1", [userId]);
+    if (!userProj) {
+      const newProjId = uuidv4();
+      await db.run("INSERT INTO projects (id, user_id, name, description) VALUES ($1, $2, $3, $4)",
+        [newProjId, userId, "Default IoT Project", "Primary Project for Channels"]);
+      userProj = { id: newProjId };
+    }
+    project_id = userProj.id;
+  } else {
+    const projCheck = await db.get(`
+      SELECT id FROM projects WHERE id = $1 AND (user_id = $2 OR EXISTS (SELECT 1 FROM project_members WHERE project_id = $1 AND user_id = $2))
+    `, [project_id, userId]);
+
+    if (!projCheck) {
+      let userProj = await db.get("SELECT id FROM projects WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1", [userId]);
+      if (!userProj) {
+        const newProjId = uuidv4();
+        await db.run("INSERT INTO projects (id, user_id, name, description) VALUES ($1, $2, $3, $4)",
+          [newProjId, userId, "Default IoT Project", "Primary Project for Channels"]);
+        userProj = { id: newProjId };
+      }
+      project_id = userProj.id;
+    }
   }
 
   // Generate unique 7-digit channel number like ThingSpeak (e.g. 3470001, 3470002, 3477622)
@@ -79,15 +119,16 @@ router.post("/", authenticateToken, async (req, res) => {
 
   await db.run(`
     INSERT INTO channels (
-      id, project_id, name, description, channel_number, api_write_key, api_read_key, is_public, public_slug,
+      id, project_id, user_id, name, description, channel_number, api_write_key, api_read_key, is_public, public_slug,
       metadata, tags, external_url, github_url, elevation, latitude, longitude, show_location,
       video_type, video_url, show_video, show_status, sharing_mode
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
   `, [
     id,
     project_id,
-    name,
+    userId,
+    name.trim(),
     description || "",
     channelNumber,
     writeKey,
@@ -139,17 +180,32 @@ router.post("/", authenticateToken, async (req, res) => {
   res.status(201).json({ message: "Channel created successfully.", channel: created });
 });
 
-// Get Channel by ID
+// Get Channel by ID (with privacy and ownership validation)
 router.get("/:id", authenticateToken, async (req, res) => {
   const channel = await db.get(`
-    SELECT c.*, p.name as project_name, p.user_id as owner_id
+    SELECT c.*, p.name as project_name, COALESCE(c.user_id, p.user_id) as owner_id
     FROM channels c
-    JOIN projects p ON c.project_id = p.id
+    LEFT JOIN projects p ON c.project_id = p.id
     WHERE c.id = $1
   `, [req.params.id]);
 
   if (!channel) {
     return res.status(404).json({ error: "Channel not found." });
+  }
+
+  const userId = req.user.id;
+  const userEmail = req.user.email;
+  const isOwner = channel.user_id === userId || channel.owner_id === userId;
+  const isPublic = channel.is_public === 1 || channel.sharing_mode === "everyone";
+
+  // Check if explicitly shared with this user's email
+  const shareCheck = await db.get(
+    "SELECT id FROM channel_shares WHERE channel_id = $1 AND LOWER(user_email) = LOWER($2)",
+    [channel.id, userEmail]
+  );
+
+  if (!isOwner && !isPublic && !shareCheck) {
+    return res.status(403).json({ error: "Access denied. This channel is private." });
   }
 
   const fields = await db.all("SELECT * FROM channel_fields WHERE channel_id = $1 ORDER BY field_order ASC", [channel.id]);
@@ -193,6 +249,21 @@ router.delete("/fields/:fieldId", authenticateToken, async (req, res) => {
 
 // Update Channel Settings
 router.put("/:id", authenticateToken, async (req, res) => {
+  const existing = await db.get(`
+    SELECT c.*, COALESCE(c.user_id, p.user_id) as owner_id
+    FROM channels c
+    LEFT JOIN projects p ON c.project_id = p.id
+    WHERE c.id = $1
+  `, [req.params.id]);
+
+  if (!existing) {
+    return res.status(404).json({ error: "Channel not found." });
+  }
+
+  if (existing.owner_id !== req.user.id && existing.user_id !== req.user.id) {
+    return res.status(403).json({ error: "Only the channel owner can update settings." });
+  }
+
   const {
     name,
     description,
@@ -350,6 +421,21 @@ router.put("/:id/sharing-mode", authenticateToken, async (req, res) => {
 
 // Delete Channel
 router.delete("/:id", authenticateToken, async (req, res) => {
+  const existing = await db.get(`
+    SELECT c.*, COALESCE(c.user_id, p.user_id) as owner_id
+    FROM channels c
+    LEFT JOIN projects p ON c.project_id = p.id
+    WHERE c.id = $1
+  `, [req.params.id]);
+
+  if (!existing) {
+    return res.status(404).json({ error: "Channel not found." });
+  }
+
+  if (existing.owner_id !== req.user.id && existing.user_id !== req.user.id) {
+    return res.status(403).json({ error: "Only the channel owner can delete this channel." });
+  }
+
   await db.run("DELETE FROM channels WHERE id = $1", [req.params.id]);
   res.json({ message: "Channel deleted." });
 });

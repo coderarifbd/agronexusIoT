@@ -258,6 +258,10 @@ export async function initDatabase() {
         grid_h INT DEFAULT 4,
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
+
+      -- Migration: Ensure channels table has user_id for strict isolation
+      ALTER TABLE channels ADD COLUMN IF NOT EXISTS user_id TEXT;
+      UPDATE channels SET user_id = (SELECT user_id FROM projects WHERE projects.id = channels.project_id) WHERE user_id IS NULL;
     `);
 
     console.log("? Neon PostgreSQL schemas verified.");
