@@ -23,7 +23,8 @@ import {
   X,
   Activity,
   Upload,
-  AlertCircle
+  AlertCircle,
+  ArrowLeft
 } from "lucide-react";
 
 export function ChannelDetailView({ channelId, onBack }) {
@@ -369,6 +370,27 @@ export function ChannelDetailView({ channelId, onBack }) {
 
   return (
     <div className="p-3 sm:p-5 max-w-7xl mx-auto space-y-4 animate-fadeIn transition-colors text-slate-800 dark:text-slate-200 text-sm">
+      {/* 0. Top Back & Breadcrumbs Bar */}
+      {onBack && (
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:border-[#137f3a] dark:hover:border-emerald-500 rounded-lg text-xs font-semibold shadow-sm transition-all cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4 text-[#137f3a] dark:text-emerald-400" />
+            <span>Back to Channels</span>
+          </button>
+          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+            <span className="cursor-pointer hover:text-[#137f3a] dark:hover:text-emerald-400" onClick={onBack}>Channels</span>
+            <span>/</span>
+            <span className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[140px] sm:max-w-xs">
+              {ch.name || `Channel ${channelIdNum}`}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* 1. Header Information Strip (Clean Compact Row) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4 pb-0.5">
         <div className="space-y-0.5">

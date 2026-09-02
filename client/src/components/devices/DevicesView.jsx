@@ -8,10 +8,12 @@ import {
   Copy,
   Check,
   Trash2,
-  Code
+  Code,
+  ArrowLeft
 } from "lucide-react";
 
-export function DevicesView() {
+export function DevicesView({ onBack, onNavigateToDashboard }) {
+  const handleBack = onBack || onNavigateToDashboard;
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -126,6 +128,16 @@ void loop() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
+          {handleBack && (
+            <button
+              type="button"
+              onClick={handleBack}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 mb-2 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-emerald-500 rounded-lg text-xs font-semibold transition-all cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Back to Dashboard</span>
+            </button>
+          )}
           <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
             <Cpu className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
             IoT Microcontroller Fleet & Device Keys

@@ -66,9 +66,29 @@ function MainApp() {
   const { toastAlert, setToastAlert } = useSocket();
 
   const [currentTab, setCurrentTab] = useState("dashboard");
+  const [tabHistory, setTabHistory] = useState([]);
   const [showAI, setShowAI] = useState(false);
   const [showAlerts, setShowAlerts] = useState(false);
   const [showActivity, setShowActivity] = useState(false);
+
+  function navigateTo(tab) {
+    if (tab !== currentTab) {
+      setTabHistory(prev => [...prev, currentTab]);
+      setCurrentTab(tab);
+    }
+  }
+
+  function goBack() {
+    if (tabHistory.length > 0) {
+      const prevTab = tabHistory[tabHistory.length - 1];
+      setTabHistory(prev => prev.slice(0, -1));
+      setCurrentTab(prevTab);
+    } else {
+      setCurrentTab("dashboard");
+    }
+  }
+
+  const canGoBack = currentTab !== "dashboard" || tabHistory.length > 0;
 
   // Check if public dashboard route e.g. /dashboard/public/:slug
   const pathname = window.location.pathname;
@@ -114,25 +134,40 @@ function MainApp() {
         onOpenAlerts={() => setShowAlerts(true)}
         onOpenActivity={() => setShowActivity(true)}
         currentTab={currentTab}
-        setCurrentTab={setCurrentTab}
+        setCurrentTab={navigateTo}
+        onBack={goBack}
+        canGoBack={canGoBack}
       />
 
       {/* Body Area */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar */}
-        <Sidebar currentTab={currentTab} setCurrentTab={setCurrentTab} />
+        <Sidebar currentTab={currentTab} setCurrentTab={navigateTo} />
 
         {/* Dynamic View Main Container with Error Boundary */}
         <main className="flex-1 overflow-y-auto pb-12">
           <ErrorBoundary>
             {currentTab === "dashboard" && (
-              <DashboardView onNavigateToChannels={() => setCurrentTab("channels")} />
+              <DashboardView onNavigateToChannels={() => navigateTo("channels")} />
             )}
             {(currentTab === "channels" || currentTab === "projects") && (
-              <MyChannelsView onNavigateToDashboard={() => setCurrentTab("dashboard")} />
+              <MyChannelsView
+                onNavigateToDashboard={() => navigateTo("dashboard")}
+                onBack={goBack}
+              />
             )}
-            {currentTab === "devices" && <DevicesView />}
-            {currentTab === "profile" && <ProfileView />}
+            {currentTab === "devices" && (
+              <DevicesView
+                onNavigateToDashboard={() => navigateTo("dashboard")}
+                onBack={goBack}
+              />
+            )}
+            {currentTab === "profile" && (
+              <ProfileView
+                onNavigateToDashboard={() => navigateTo("dashboard")}
+                onBack={goBack}
+              />
+            )}
           </ErrorBoundary>
         </main>
       </div>
