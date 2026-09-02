@@ -5,7 +5,8 @@ import {
   Radio,
   Cpu,
   UserCheck,
-  Terminal
+  Terminal,
+  LogOut
 } from "lucide-react";
 
 export function Sidebar({ currentTab, setCurrentTab }) {

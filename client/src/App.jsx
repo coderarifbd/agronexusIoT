@@ -202,7 +202,9 @@ export default function App() {
       <AuthProvider>
         <SocketProvider>
           <ProjectProvider>
-            <MainApp />
+            <ErrorBoundary>
+              <MainApp />
+            </ErrorBoundary>
           </ProjectProvider>
         </SocketProvider>
       </AuthProvider>

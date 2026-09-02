@@ -13,6 +13,11 @@ export const pool = new Pool({
   connectionTimeoutMillis: 10000
 });
 
+// Prevent unhandled error crashes on idle pool connection resets from cloud DB
+pool.on("error", (err) => {
+  console.error("⚠️ PostgreSQL idle connection error (handled gracefully):", err.message);
+});
+
 // Clean helper wrappers for PostgreSQL async queries
 export const db = {
   async query(text, params) {

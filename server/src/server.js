@@ -8,6 +8,14 @@ import { simulator } from "./services/simulatorService.js";
 
 const server = http.createServer(app);
 
+process.on("unhandledRejection", (reason) => {
+  console.error("⚠️ Unhandled Promise Rejection:", reason);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("⚠️ Uncaught Exception:", err);
+});
+
 async function startServer() {
   try {
     await initDatabase();
