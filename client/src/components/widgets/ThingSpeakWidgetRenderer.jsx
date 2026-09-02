@@ -41,13 +41,6 @@ export function ThingSpeakWidgetRenderer({ widget, channel, currentValues = {}, 
       }
     }
 
-    // 5. Any first numeric property (excluding metadata)
-    for (const k of Object.keys(source)) {
-      if (k.startsWith("_") || k === "id" || k === "timestamp" || k === "created_at") continue;
-      const v = Number(source[k]);
-      if (!isNaN(v)) return v;
-    }
-
     return null;
   }
 
@@ -55,7 +48,8 @@ export function ThingSpeakWidgetRenderer({ widget, channel, currentValues = {}, 
   if (rawVal === null) {
     rawVal = extractNumericValue(currentValues);
   }
-  const num = rawVal !== null ? rawVal : 0;
+  const hasData = rawVal !== null && !isNaN(rawVal);
+  const num = hasData ? rawVal : 0;
 
   const config = typeof widget.config === "string"
     ? JSON.parse(widget.config || "{}")
@@ -85,7 +79,8 @@ export function ThingSpeakWidgetRenderer({ widget, channel, currentValues = {}, 
   // Render Gauge (Exact clone of media_1788288005556.png)
   function renderGauge() {
     const clamped = Math.max(min, Math.min(max, num));
-    const fraction = (clamped - min) / span;
+    // Until sensor data is received, fraction is 0 so needle rests motionless at starting position
+    const fraction = hasData ? (clamped - min) / span : 0;
 
     // Angle conventions: 0deg is at 12 o'clock (top)
     // Scale starts at 225deg (or -135deg) at bottom-left and sweeps 270deg clockwise to 135deg at bottom-right
@@ -225,11 +220,19 @@ export function ThingSpeakWidgetRenderer({ widget, channel, currentValues = {}, 
           </svg>
         </div>
 
-        {/* Digital Readout below dial */}
+        {/* Digital Readout below dial (Only shows reading when sensor data arrives) */}
         {displayValue && (
           <div className="text-center font-sans font-semibold text-base text-slate-800 dark:text-white -mt-2">
-            <span>{Number(num.toFixed(1))}</span>
-            {unit && <span className="ml-1 text-xs font-normal text-slate-500">{unit}</span>}
+            {hasData ? (
+              <>
+                <span>{Number(num.toFixed(1))}</span>
+                {unit && <span className="ml-1 text-xs font-normal text-slate-500">{unit}</span>}
+              </>
+            ) : (
+              <span className="text-slate-400 dark:text-slate-500 font-mono text-xs tracking-wider" title="Awaiting real sensor data">
+                ---
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -242,14 +245,12 @@ export function ThingSpeakWidgetRenderer({ widget, channel, currentValues = {}, 
       <div className="flex flex-col items-center justify-center p-4">
         <div className="border-2 border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded-lg px-6 py-3 shadow-inner">
           <span className="font-mono text-3xl sm:text-4xl font-bold text-slate-800 dark:text-slate-100 tracking-wider">
-            {Number(num.toFixed(1))}
+            {hasData ? Number(num.toFixed(1)) : "---"}
           </span>
         </div>
-        {unit && (
-          <span className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-2 uppercase tracking-widest font-semibold">
-            {unit}
-          </span>
-        )}
+        <span className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-2 uppercase tracking-widest font-semibold">
+          {hasData ? (unit || "Value") : "Awaiting Sensor Data"}
+        </span>
       </div>
     );
   }
@@ -257,11 +258,13 @@ export function ThingSpeakWidgetRenderer({ widget, channel, currentValues = {}, 
   // Render Lamp Indicator
   function renderLamp() {
     let isLit = false;
-    const thresh = config.lampThreshold || 50;
-    if (config.lampCondition === "gt") isLit = num > thresh;
-    else if (config.lampCondition === "lt") isLit = num < thresh;
-    else if (config.lampCondition === "eq") isLit = num === thresh;
-    else isLit = num > 0;
+    if (hasData) {
+      const thresh = config.lampThreshold || 50;
+      if (config.lampCondition === "gt") isLit = num > thresh;
+      else if (config.lampCondition === "lt") isLit = num < thresh;
+      else if (config.lampCondition === "eq") isLit = num === thresh;
+      else isLit = num > 0;
+    }
 
     return (
       <div className="flex flex-col items-center justify-center p-3">
@@ -281,7 +284,10 @@ export function ThingSpeakWidgetRenderer({ widget, channel, currentValues = {}, 
           />
         </div>
         <div className="mt-2 text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-          Status: <span className={isLit ? "text-emerald-600 dark:text-emerald-400" : "text-slate-500"}>{isLit ? "ON / ACTIVE" : "OFF / IDLE"}</span>
+          Status:{" "}
+          <span className={isLit ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}>
+            {!hasData ? "NO SENSOR DATA" : isLit ? "ON / ACTIVE" : "OFF / IDLE"}
+          </span>
         </div>
       </div>
     );
