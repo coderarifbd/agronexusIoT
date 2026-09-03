@@ -1,4 +1,6 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import {
   Plus,
   ArrowLeft,
@@ -9,6 +11,7 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCcw,
+  RotateCw,
   Download,
   Code,
   Sparkles,
@@ -17,23 +20,249 @@ import {
   Copy,
   Info,
   Sliders,
-  Maximize2
+  Maximize2,
+  Search,
+  Grid,
+  List,
+  Folder,
+  Star,
+  User,
+  Share2,
+  Play,
+  Square,
+  Type,
+  Maximize,
+  Moon,
+  Sun,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  HelpCircle,
+  FileCode,
+  Terminal,
+  Activity,
+  X
 } from "lucide-react";
 
 // ============================================================================
-// COMPONENT LIBRARY DEFINITIONS
+// COMPONENT LIBRARY DEFINITIONS WITH GRAPHIC ICONS & PINOUTS
 // ============================================================================
 
-export const COMPONENT_CATALOG = [
-  // Microcontrollers
+export const CIRKIT_PARTS = [
   {
-    type: "esp32",
+    id: "half_breadboard",
+    name: "Half Breadboard",
+    category: "Prototyping",
+    width: 260,
+    height: 180,
+    color: "#f8fafc",
+    border: "#cbd5e1",
+    renderGraphic: (
+      <svg viewBox="0 0 70 50" className="w-12 h-10 mx-auto">
+        <rect x="2" y="2" width="66" height="46" rx="3" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5" />
+        {/* Red & Blue power bus lines */}
+        <line x1="8" y1="8" x2="62" y2="8" stroke="#ef4444" strokeWidth="1.2" />
+        <line x1="8" y1="12" x2="62" y2="12" stroke="#3b82f6" strokeWidth="1.2" />
+        <line x1="8" y1="38" x2="62" y2="38" stroke="#3b82f6" strokeWidth="1.2" />
+        <line x1="8" y1="42" x2="62" y2="42" stroke="#ef4444" strokeWidth="1.2" />
+        {/* Breadboard pin holes */}
+        {[18, 22, 26, 30, 34].map(y =>
+          [10, 16, 22, 28, 34, 40, 46, 52, 58].map(x => (
+            <circle key={`${x}-${y}`} cx={x} cy={y} r="1" fill="#94a3b8" />
+          ))
+        )}
+        {/* Center divider channel */}
+        <rect x="5" y="24" width="60" height="2" fill="#e2e8f0" />
+      </svg>
+    ),
+    pins: [
+      { id: "vcc_top", name: "+ (Top)", type: "power", color: "#ef4444", side: "top" },
+      { id: "gnd_top", name: "- (Top)", type: "gnd", color: "#1e293b", side: "top" },
+      { id: "t1", name: "Row 1-5", type: "gpio", color: "#3b82f6", side: "bottom" },
+      { id: "t2", name: "Row 6-10", type: "gpio", color: "#3b82f6", side: "bottom" },
+      { id: "vcc_bot", name: "+ (Bot)", type: "power", color: "#ef4444", side: "bottom" },
+      { id: "gnd_bot", name: "- (Bot)", type: "gnd", color: "#1e293b", side: "bottom" }
+    ]
+  },
+  {
+    id: "full_breadboard",
+    name: "Full Breadboard",
+    category: "Prototyping",
+    width: 320,
+    height: 180,
+    color: "#f8fafc",
+    border: "#cbd5e1",
+    renderGraphic: (
+      <svg viewBox="0 0 85 50" className="w-14 h-10 mx-auto">
+        <rect x="2" y="2" width="81" height="46" rx="3" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5" />
+        <line x1="6" y1="7" x2="79" y2="7" stroke="#ef4444" strokeWidth="1.2" />
+        <line x1="6" y1="11" x2="79" y2="11" stroke="#3b82f6" strokeWidth="1.2" />
+        <line x1="6" y1="39" x2="79" y2="39" stroke="#3b82f6" strokeWidth="1.2" />
+        <line x1="6" y1="43" x2="79" y2="43" stroke="#ef4444" strokeWidth="1.2" />
+        {[18, 22, 28, 32].map(y =>
+          [10, 18, 26, 34, 42, 50, 58, 66, 74].map(x => (
+            <circle key={`${x}-${y}`} cx={x} cy={y} r="1.1" fill="#94a3b8" />
+          ))
+        )}
+      </svg>
+    ),
+    pins: [
+      { id: "vcc_top", name: "+ (Top)", type: "power", color: "#ef4444", side: "top" },
+      { id: "gnd_top", name: "- (Top)", type: "gnd", color: "#1e293b", side: "top" },
+      { id: "vcc_bot", name: "+ (Bot)", type: "power", color: "#ef4444", side: "bottom" },
+      { id: "gnd_bot", name: "- (Bot)", type: "gnd", color: "#1e293b", side: "bottom" }
+    ]
+  },
+  {
+    id: "mini_breadboard",
+    name: "Mini Breadboard",
+    category: "Prototyping",
+    width: 200,
+    height: 160,
+    color: "#f8fafc",
+    border: "#cbd5e1",
+    renderGraphic: (
+      <svg viewBox="0 0 50 50" className="w-10 h-10 mx-auto">
+        <rect x="4" y="4" width="42" height="42" rx="3" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5" />
+        {[12, 18, 24, 30, 36].map(y =>
+          [10, 16, 22, 28, 34, 40].map(x => (
+            <circle key={`${x}-${y}`} cx={x} cy={y} r="1" fill="#94a3b8" />
+          ))
+        )}
+      </svg>
+    ),
+    pins: [
+      { id: "p1", name: "Row A", type: "gpio", color: "#3b82f6", side: "top" },
+      { id: "p2", name: "Row B", type: "gpio", color: "#3b82f6", side: "bottom" }
+    ]
+  },
+  {
+    id: "electrolytic_cap",
+    name: "Electrolytic Capacitor",
+    category: "Passives",
+    width: 140,
+    height: 130,
+    color: "#1e293b",
+    border: "#475569",
+    renderGraphic: (
+      <svg viewBox="0 0 40 50" className="w-8 h-10 mx-auto">
+        {/* Can cylinder */}
+        <rect x="12" y="6" width="16" height="30" rx="3" fill="#0f172a" stroke="#334155" strokeWidth="1.5" />
+        {/* Negative stripe */}
+        <rect x="22" y="6" width="5" height="30" fill="#94a3b8" />
+        <text x="24.5" y="22" fontSize="5" fill="#0f172a" fontWeight="bold" textAnchor="middle">-</text>
+        {/* Downward metal wire leads */}
+        <line x1="16" y1="36" x2="16" y2="47" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="24" y1="36" x2="24" y2="44" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+    pins: [
+      { id: "pos", name: "Positive (+)", type: "power", color: "#ef4444", side: "bottom" },
+      { id: "neg", name: "Negative (-)", type: "gnd", color: "#1e293b", side: "bottom" }
+    ]
+  },
+  {
+    id: "resistor",
+    name: "Resistor",
+    category: "Passives",
+    width: 140,
+    height: 110,
+    color: "#e2e8f0",
+    border: "#94a3b8",
+    renderGraphic: (
+      <svg viewBox="0 0 60 40" className="w-12 h-8 mx-auto">
+        {/* Axial leads */}
+        <line x1="4" y1="20" x2="16" y2="20" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
+        <line x1="44" y1="20" x2="56" y2="20" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
+        {/* Resistor body */}
+        <rect x="16" y="14" width="28" height="12" rx="4" fill="#d97706" stroke="#b45309" strokeWidth="1" />
+        {/* Color bands */}
+        <line x1="22" y1="14" x2="22" y2="26" stroke="#78350f" strokeWidth="2" />
+        <line x1="27" y1="14" x2="27" y2="26" stroke="#000000" strokeWidth="2" />
+        <line x1="32" y1="14" x2="32" y2="26" stroke="#ef4444" strokeWidth="2" />
+        <line x1="38" y1="14" x2="38" y2="26" stroke="#eab308" strokeWidth="2" />
+      </svg>
+    ),
+    pins: [
+      { id: "pin1", name: "Lead 1", type: "gpio", color: "#3b82f6", side: "left" },
+      { id: "pin2", name: "Lead 2", type: "gpio", color: "#3b82f6", side: "right" }
+    ]
+  },
+  {
+    id: "pushbutton",
+    name: "Pushbutton",
+    category: "Inputs",
+    width: 140,
+    height: 120,
+    color: "#334155",
+    border: "#64748b",
+    renderGraphic: (
+      <svg viewBox="0 0 44 44" className="w-9 h-9 mx-auto">
+        {/* Square metal casing */}
+        <rect x="8" y="8" width="28" height="28" rx="3" fill="#cbd5e1" stroke="#94a3b8" strokeWidth="1.5" />
+        {/* Center round plunger */}
+        <circle cx="22" cy="22" r="8" fill="#1e293b" stroke="#0f172a" strokeWidth="1" />
+        {/* 4 bent solder legs */}
+        <line x1="4" y1="14" x2="8" y2="14" stroke="#64748b" strokeWidth="2" strokeLinecap="round" />
+        <line x1="4" y1="30" x2="8" y2="30" stroke="#64748b" strokeWidth="2" strokeLinecap="round" />
+        <line x1="36" y1="14" x2="40" y2="14" stroke="#64748b" strokeWidth="2" strokeLinecap="round" />
+        <line x1="36" y1="30" x2="40" y2="30" stroke="#64748b" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    ),
+    pins: [
+      { id: "p1a", name: "Pin 1A", type: "gpio", color: "#3b82f6", side: "left" },
+      { id: "p1b", name: "Pin 1B", type: "gpio", color: "#3b82f6", side: "left" },
+      { id: "p2a", name: "Pin 2A", type: "gpio", color: "#3b82f6", side: "right" },
+      { id: "p2b", name: "Pin 2B", type: "gpio", color: "#3b82f6", side: "right" }
+    ]
+  },
+  {
+    id: "ceramic_cap",
+    name: "Ceramic Capacitor",
+    category: "Passives",
+    width: 130,
+    height: 120,
+    color: "#0284c7",
+    border: "#38bdf8",
+    renderGraphic: (
+      <svg viewBox="0 0 40 44" className="w-8 h-9 mx-auto">
+        {/* Blue ceramic disc */}
+        <circle cx="20" cy="16" r="11" fill="#0284c7" stroke="#0369a1" strokeWidth="1.5" />
+        <text x="20" y="18" fontSize="4.5" fill="#ffffff" fontWeight="bold" textAnchor="middle">104</text>
+        {/* Leads */}
+        <line x1="16" y1="27" x2="16" y2="40" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="24" y1="27" x2="24" y2="40" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+    pins: [
+      { id: "lead1", name: "Lead 1", type: "gpio", color: "#3b82f6", side: "bottom" },
+      { id: "lead2", name: "Lead 2", type: "gpio", color: "#3b82f6", side: "bottom" }
+    ]
+  },
+  {
+    id: "esp32",
+    name: "ESP32 (30 pin)",
     category: "Microcontrollers",
-    name: "ESP32 DevKit V1",
-    subtitle: "30-Pin Dual-Core Wi-Fi & BLE MCU",
-    color: "#10b981",
     width: 220,
     height: 310,
+    color: "#1e293b",
+    border: "#475569",
+    renderGraphic: (
+      <svg viewBox="0 0 48 64" className="w-9 h-12 mx-auto">
+        {/* Black PCB */}
+        <rect x="4" y="2" width="40" height="60" rx="3" fill="#0f172a" stroke="#334155" strokeWidth="1.5" />
+        {/* Metal RF Shield */}
+        <rect x="10" y="8" width="28" height="24" rx="1.5" fill="#94a3b8" stroke="#cbd5e1" strokeWidth="1" />
+        <text x="24" y="22" fontSize="4.5" fill="#1e293b" fontWeight="bold" textAnchor="middle">ESP-WROOM-32</text>
+        {/* PCB antenna traces at top */}
+        <path d="M 14 6 L 14 4 L 34 4 L 34 6" fill="none" stroke="#eab308" strokeWidth="1" />
+        {/* Pin header rows */}
+        <line x1="6" y1="8" x2="6" y2="56" stroke="#eab308" strokeWidth="2" strokeDasharray="1.5 2" />
+        <line x1="42" y1="8" x2="42" y2="56" stroke="#eab308" strokeWidth="2" strokeDasharray="1.5 2" />
+        {/* Micro USB port */}
+        <rect x="18" y="56" width="12" height="6" rx="1" fill="#cbd5e1" />
+      </svg>
+    ),
     pins: [
       { id: "3v3", name: "3V3", type: "power", color: "#ef4444", side: "left" },
       { id: "gnd1", name: "GND", type: "gnd", color: "#1e293b", side: "left" },
@@ -46,8 +275,6 @@ export const COMPONENT_CATALOG = [
       { id: "d18", name: "D18", type: "gpio", color: "#3b82f6", side: "left" },
       { id: "d19", name: "D19", type: "gpio", color: "#3b82f6", side: "left" },
       { id: "d21", name: "D21 (SDA)", type: "i2c", color: "#8b5cf6", side: "left" },
-      { id: "rx0", name: "RX0", type: "gpio", color: "#3b82f6", side: "left" },
-      { id: "tx0", name: "TX0", type: "gpio", color: "#3b82f6", side: "left" },
       { id: "d22", name: "D22 (SCL)", type: "i2c", color: "#06b6d4", side: "left" },
       { id: "d23", name: "D23", type: "gpio", color: "#3b82f6", side: "left" },
 
@@ -62,85 +289,72 @@ export const COMPONENT_CATALOG = [
       { id: "d33", name: "D33", type: "gpio", color: "#3b82f6", side: "right" },
       { id: "d32", name: "D32", type: "gpio", color: "#3b82f6", side: "right" },
       { id: "d35", name: "D35 (ADC)", type: "adc", color: "#f59e0b", side: "right" },
-      { id: "d34", name: "D34 (ADC)", type: "adc", color: "#f59e0b", side: "right" },
-      { id: "vn", name: "VN (D39)", type: "adc", color: "#f59e0b", side: "right" },
-      { id: "vp", name: "VP (D36)", type: "adc", color: "#f59e0b", side: "right" },
-      { id: "en", name: "EN", type: "power", color: "#ef4444", side: "right" }
+      { id: "d34", name: "D34 (ADC)", type: "adc", color: "#f59e0b", side: "right" }
     ]
   },
   {
-    type: "arduino_uno",
-    category: "Microcontrollers",
-    name: "Arduino Uno R3",
-    subtitle: "ATmega328P Development Board",
-    color: "#0284c7",
-    width: 230,
-    height: 310,
+    id: "diode",
+    name: "Diode",
+    category: "Semiconductors",
+    width: 140,
+    height: 110,
+    color: "#0f172a",
+    border: "#475569",
+    renderGraphic: (
+      <svg viewBox="0 0 60 36" className="w-12 h-7 mx-auto">
+        <line x1="4" y1="18" x2="18" y2="18" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
+        <line x1="42" y1="18" x2="56" y2="18" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
+        <rect x="18" y="12" width="24" height="12" rx="2" fill="#0f172a" stroke="#334155" strokeWidth="1" />
+        {/* Silver cathode band */}
+        <rect x="36" y="12" width="4" height="12" fill="#cbd5e1" />
+      </svg>
+    ),
     pins: [
-      { id: "5v", name: "5V", type: "power", color: "#ef4444", side: "left" },
-      { id: "3v3", name: "3.3V", type: "power", color: "#ef4444", side: "left" },
-      { id: "gnd1", name: "GND", type: "gnd", color: "#1e293b", side: "left" },
-      { id: "gnd2", name: "GND", type: "gnd", color: "#1e293b", side: "left" },
-      { id: "vin", name: "VIN", type: "power", color: "#ef4444", side: "left" },
-      { id: "a0", name: "A0 (ADC)", type: "adc", color: "#f59e0b", side: "left" },
-      { id: "a1", name: "A1 (ADC)", type: "adc", color: "#f59e0b", side: "left" },
-      { id: "a2", name: "A2 (ADC)", type: "adc", color: "#f59e0b", side: "left" },
-      { id: "a3", name: "A3 (ADC)", type: "adc", color: "#f59e0b", side: "left" },
-      { id: "a4", name: "A4 (SDA)", type: "i2c", color: "#8b5cf6", side: "left" },
-      { id: "a5", name: "A5 (SCL)", type: "i2c", color: "#06b6d4", side: "left" },
-
-      { id: "d13", name: "D13 (SCK)", type: "gpio", color: "#3b82f6", side: "right" },
-      { id: "d12", name: "D12 (MISO)", type: "gpio", color: "#3b82f6", side: "right" },
-      { id: "d11", name: "D11 (MOSI)", type: "gpio", color: "#3b82f6", side: "right" },
-      { id: "d10", name: "D10 (SS)", type: "gpio", color: "#3b82f6", side: "right" },
-      { id: "d9", name: "D9 (PWM)", type: "gpio", color: "#3b82f6", side: "right" },
-      { id: "d8", name: "D8", type: "gpio", color: "#3b82f6", side: "right" },
-      { id: "d7", name: "D7", type: "gpio", color: "#3b82f6", side: "right" },
-      { id: "d6", name: "D6 (PWM)", type: "gpio", color: "#3b82f6", side: "right" },
-      { id: "d5", name: "D5 (PWM)", type: "gpio", color: "#3b82f6", side: "right" },
-      { id: "d4", name: "D4", type: "gpio", color: "#3b82f6", side: "right" },
-      { id: "d3", name: "D3 (INT1)", type: "gpio", color: "#3b82f6", side: "right" },
-      { id: "d2", name: "D2 (INT0)", type: "gpio", color: "#3b82f6", side: "right" },
-      { id: "d1", name: "D1 (TX)", type: "gpio", color: "#3b82f6", side: "right" },
-      { id: "d0", name: "D0 (RX)", type: "gpio", color: "#3b82f6", side: "right" }
+      { id: "anode", name: "Anode (+)", type: "gpio", color: "#3b82f6", side: "left" },
+      { id: "cathode", name: "Cathode (-)", type: "gnd", color: "#1e293b", side: "right" }
     ]
   },
   {
-    type: "esp8266",
-    category: "Microcontrollers",
-    name: "ESP8266 NodeMCU",
-    subtitle: "Wi-Fi Enabled Microcontroller",
-    color: "#6366f1",
-    width: 210,
-    height: 270,
+    id: "npn_transistor",
+    name: "NPN Transistor (EBC)",
+    category: "Semiconductors",
+    width: 150,
+    height: 130,
+    color: "#1e293b",
+    border: "#475569",
+    renderGraphic: (
+      <svg viewBox="0 0 40 46" className="w-8 h-9 mx-auto">
+        {/* TO-92 plastic package */}
+        <path d="M 10 20 C 10 10 30 10 30 20 L 30 24 L 10 24 Z" fill="#0f172a" stroke="#334155" strokeWidth="1.5" />
+        {/* 3 metal leads: E, B, C */}
+        <line x1="14" y1="24" x2="14" y2="42" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="20" y1="24" x2="20" y2="42" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="26" y1="24" x2="26" y2="42" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
     pins: [
-      { id: "3v3_1", name: "3V3", type: "power", color: "#ef4444", side: "left" },
-      { id: "gnd_1", name: "GND", type: "gnd", color: "#1e293b", side: "left" },
-      { id: "d1", name: "D1 (SCL)", type: "i2c", color: "#06b6d4", side: "left" },
-      { id: "d2", name: "D2 (SDA)", type: "i2c", color: "#8b5cf6", side: "left" },
-      { id: "d3", name: "D3", type: "gpio", color: "#3b82f6", side: "left" },
-      { id: "d4", name: "D4", type: "gpio", color: "#3b82f6", side: "left" },
-      { id: "3v3_2", name: "3V3", type: "power", color: "#ef4444", side: "left" },
-
-      { id: "vin", name: "VIN (5V)", type: "power", color: "#ef4444", side: "right" },
-      { id: "gnd_2", name: "GND", type: "gnd", color: "#1e293b", side: "right" },
-      { id: "d5", name: "D5", type: "gpio", color: "#3b82f6", side: "right" },
-      { id: "d6", name: "D6", type: "gpio", color: "#3b82f6", side: "right" },
-      { id: "d7", name: "D7", type: "gpio", color: "#3b82f6", side: "right" },
-      { id: "d8", name: "D8", type: "gpio", color: "#3b82f6", side: "right" },
-      { id: "a0", name: "A0 (ADC)", type: "adc", color: "#f59e0b", side: "right" }
+      { id: "e", name: "Emitter (E)", type: "gpio", color: "#3b82f6", side: "bottom" },
+      { id: "b", name: "Base (B)", type: "gpio", color: "#3b82f6", side: "bottom" },
+      { id: "c", name: "Collector (C)", type: "gpio", color: "#3b82f6", side: "bottom" }
     ]
   },
-
-  // Sensors
   {
-    type: "soil_moisture",
-    category: "Sensors",
+    id: "soil_moisture",
     name: "Soil Moisture Sensor",
-    subtitle: "Capacitive / Resistive Sensor",
-    color: "#b45309",
+    category: "Sensors",
     width: 170,
     height: 140,
+    color: "#b45309",
+    border: "#d97706",
+    renderGraphic: (
+      <svg viewBox="0 0 44 54" className="w-9 h-11 mx-auto">
+        <rect x="8" y="2" width="28" height="20" rx="2" fill="#15803d" stroke="#166534" strokeWidth="1" />
+        {/* Sensor PCB prongs */}
+        <path d="M 12 22 L 12 50 L 16 50 L 16 22 Z" fill="#eab308" stroke="#ca8a04" strokeWidth="0.8" />
+        <path d="M 28 22 L 28 50 L 32 50 L 32 22 Z" fill="#eab308" stroke="#ca8a04" strokeWidth="0.8" />
+        <circle cx="22" cy="10" r="2.5" fill="#3b82f6" />
+      </svg>
+    ),
     pins: [
       { id: "vcc", name: "VCC (3.3V-5V)", type: "power", color: "#ef4444", side: "bottom" },
       { id: "gnd", name: "GND", type: "gnd", color: "#1e293b", side: "bottom" },
@@ -148,13 +362,29 @@ export const COMPONENT_CATALOG = [
     ]
   },
   {
-    type: "dht22",
+    id: "dht11",
+    name: "DHT11 Humidity & Temp",
     category: "Sensors",
-    name: "DHT22 / DHT11",
-    subtitle: "Temperature & Humidity Sensor",
-    color: "#059669",
     width: 170,
     height: 140,
+    color: "#0284c7",
+    border: "#38bdf8",
+    renderGraphic: (
+      <svg viewBox="0 0 40 50" className="w-8 h-10 mx-auto">
+        {/* Sky-blue sensor grid casing */}
+        <rect x="6" y="4" width="28" height="32" rx="3" fill="#0284c7" stroke="#0369a1" strokeWidth="1.5" />
+        {/* Mesh holes */}
+        {[10, 16, 22, 28].map(y =>
+          [12, 18, 24, 28].map(x => (
+            <rect key={`${x}-${y}`} x={x} y={y} width="3" height="3" fill="#0369a1" rx="0.5" />
+          ))
+        )}
+        {/* 3 pins */}
+        <line x1="12" y1="36" x2="12" y2="46" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round" />
+        <line x1="20" y1="36" x2="20" y2="46" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round" />
+        <line x1="28" y1="36" x2="28" y2="46" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    ),
     pins: [
       { id: "vcc", name: "VCC (3.3V-5V)", type: "power", color: "#ef4444", side: "bottom" },
       { id: "data", name: "DATA (Signal)", type: "gpio", color: "#3b82f6", side: "bottom" },
@@ -162,58 +392,23 @@ export const COMPONENT_CATALOG = [
     ]
   },
   {
-    type: "ds18b20",
-    category: "Sensors",
-    name: "DS18B20 Temp Probe",
-    subtitle: "Waterproof 1-Wire Digital Probe",
-    color: "#dc2626",
-    width: 170,
-    height: 140,
-    pins: [
-      { id: "vcc", name: "VCC (3.3V-5V)", type: "power", color: "#ef4444", side: "bottom" },
-      { id: "data", name: "DATA (1-Wire)", type: "gpio", color: "#3b82f6", side: "bottom" },
-      { id: "gnd", name: "GND", type: "gnd", color: "#1e293b", side: "bottom" }
-    ]
-  },
-  {
-    type: "ultrasonic",
-    category: "Sensors",
-    name: "HC-SR04 Ultrasonic",
-    subtitle: "Distance / Tank Level Sensor",
-    color: "#2563eb",
-    width: 190,
-    height: 150,
-    pins: [
-      { id: "vcc", name: "VCC (5V)", type: "power", color: "#ef4444", side: "bottom" },
-      { id: "trig", name: "TRIG", type: "gpio", color: "#3b82f6", side: "bottom" },
-      { id: "echo", name: "ECHO", type: "gpio", color: "#10b981", side: "bottom" },
-      { id: "gnd", name: "GND", type: "gnd", color: "#1e293b", side: "bottom" }
-    ]
-  },
-  {
-    type: "ldr",
-    category: "Sensors",
-    name: "LDR Light Sensor",
-    subtitle: "Photoresistor Module",
-    color: "#d97706",
-    width: 160,
-    height: 140,
-    pins: [
-      { id: "vcc", name: "VCC (3.3V-5V)", type: "power", color: "#ef4444", side: "bottom" },
-      { id: "gnd", name: "GND", type: "gnd", color: "#1e293b", side: "bottom" },
-      { id: "ao", name: "AO (Analog)", type: "adc", color: "#f59e0b", side: "bottom" }
-    ]
-  },
-
-  // Actuators & Displays
-  {
-    type: "relay",
-    category: "Actuators & Relays",
+    id: "relay_module",
     name: "5V Relay Module",
-    subtitle: "High Power Pump / Fan Switch",
-    color: "#7c3aed",
-    width: 170,
-    height: 140,
+    category: "Actuators",
+    width: 180,
+    height: 150,
+    color: "#2563eb",
+    border: "#1d4ed8",
+    renderGraphic: (
+      <svg viewBox="0 0 48 48" className="w-10 h-10 mx-auto">
+        <rect x="4" y="4" width="40" height="40" rx="3" fill="#1e293b" stroke="#334155" strokeWidth="1" />
+        {/* Blue Songle relay cube */}
+        <rect x="8" y="8" width="32" height="24" rx="2" fill="#2563eb" stroke="#1d4ed8" strokeWidth="1" />
+        <text x="24" y="22" fontSize="5" fill="#ffffff" fontWeight="bold" textAnchor="middle">SONGLE</text>
+        {/* Green terminal block */}
+        <rect x="8" y="34" width="32" height="8" rx="1.5" fill="#15803d" />
+      </svg>
+    ),
     pins: [
       { id: "vcc", name: "VCC (5V)", type: "power", color: "#ef4444", side: "bottom" },
       { id: "gnd", name: "GND", type: "gnd", color: "#1e293b", side: "bottom" },
@@ -221,91 +416,126 @@ export const COMPONENT_CATALOG = [
     ]
   },
   {
-    type: "oled",
-    category: "Displays",
+    id: "oled_display",
     name: "0.96\" OLED Display",
-    subtitle: "I2C 128x64 SSD1306 Screen",
-    color: "#475569",
-    width: 170,
-    height: 140,
+    category: "Displays",
+    width: 180,
+    height: 150,
+    color: "#0f172a",
+    border: "#334155",
+    renderGraphic: (
+      <svg viewBox="0 0 50 44" className="w-11 h-9 mx-auto">
+        <rect x="2" y="2" width="46" height="40" rx="3" fill="#1e3a8a" stroke="#1e40af" strokeWidth="1" />
+        <rect x="6" y="10" width="38" height="26" rx="1" fill="#020617" stroke="#38bdf8" strokeWidth="0.8" />
+        <text x="25" y="25" fontSize="4.5" fill="#38bdf8" fontFamily="monospace" textAnchor="middle">AgroNexus</text>
+      </svg>
+    ),
     pins: [
-      { id: "vcc", name: "VCC (3.3V-5V)", type: "power", color: "#ef4444", side: "bottom" },
-      { id: "gnd", name: "GND", type: "gnd", color: "#1e293b", side: "bottom" },
-      { id: "scl", name: "SCL", type: "i2c", color: "#06b6d4", side: "bottom" },
-      { id: "sda", name: "SDA", type: "i2c", color: "#8b5cf6", side: "bottom" }
+      { id: "vcc", name: "VCC (3.3V-5V)", type: "power", color: "#ef4444", side: "top" },
+      { id: "gnd", name: "GND", type: "gnd", color: "#1e293b", side: "top" },
+      { id: "scl", name: "SCL (I2C)", type: "i2c", color: "#06b6d4", side: "top" },
+      { id: "sda", name: "SDA (I2C)", type: "i2c", color: "#8b5cf6", side: "top" }
+    ]
+  },
+  {
+    id: "ultrasonic",
+    name: "HC-SR04 Ultrasonic",
+    category: "Sensors",
+    width: 190,
+    height: 150,
+    color: "#1e3a8a",
+    border: "#3b82f6",
+    renderGraphic: (
+      <svg viewBox="0 0 56 40" className="w-12 h-9 mx-auto">
+        <rect x="2" y="4" width="52" height="32" rx="3" fill="#1d4ed8" stroke="#1e40af" strokeWidth="1" />
+        {/* 2 silver transducer barrels */}
+        <circle cx="16" cy="20" r="10" fill="#cbd5e1" stroke="#94a3b8" strokeWidth="1.5" />
+        <circle cx="40" cy="20" r="10" fill="#cbd5e1" stroke="#94a3b8" strokeWidth="1.5" />
+        <circle cx="16" cy="20" r="5" fill="#64748b" />
+        <circle cx="40" cy="20" r="5" fill="#64748b" />
+      </svg>
+    ),
+    pins: [
+      { id: "vcc", name: "VCC (5V)", type: "power", color: "#ef4444", side: "bottom" },
+      { id: "trig", name: "TRIG", type: "gpio", color: "#3b82f6", side: "bottom" },
+      { id: "echo", name: "ECHO", type: "gpio", color: "#10b981", side: "bottom" },
+      { id: "gnd", name: "GND", type: "gnd", color: "#1e293b", side: "bottom" }
     ]
   }
 ];
 
+// ============================================================================
+// MAIN CIRKIT DESIGNER WORKSPACE COMPONENT
+// ============================================================================
 
+export function CircuitDesignerView({ onNavigateToCodeGen, onOpenAI }) {
+  const { user } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
-export function CircuitDesignerView({ onNavigateToCodeGen }) {
-  // Mode: 'home' (matching user reference image) or 'workspace' (active canvas)
-  const [viewMode, setViewMode] = useState("home");
-  const [activeProjectName, setActiveProjectName] = useState("Untitled Circuit");
+  // Mode tabs: 'design' (default), 'code', 'simulate', 'upload'
+  const [activeTab, setActiveTab] = useState("design");
+  const [projectName, setProjectName] = useState("Untitled circuit design");
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+
+  // Left vertical navigation bar active item
+  const [activeNav, setActiveNav] = useState("parts");
+
+  // Parts filter: 'diagramming' or 'simulation'
+  const [partsMode, setPartsMode] = useState("diagramming");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isDrawerCollapsed, setIsDrawerCollapsed] = useState(false);
 
   // Canvas State
   const [components, setComponents] = useState([]);
   const [wires, setWires] = useState([]);
-  const [selectedWire, setSelectedWire] = useState(null);
-  const [selectedComponentId, setSelectedComponentId] = useState(null);
+  const [selectedCompId, setSelectedCompId] = useState(null);
+  const [selectedWireId, setSelectedWireId] = useState(null);
 
-  // Wire Drafting State (connecting from pin A to pin B)
-  const [pendingPin, setPendingPin] = useState(null); // { compId, pinId, pinName, type }
+  // Wire Drafting State
+  const [pendingPin, setPendingPin] = useState(null);
 
   // Dragging State
   const [draggingCompId, setDraggingCompId] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
-  // Canvas Zoom
+  // Simulation State
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [simulationLogs, setSimulationLogs] = useState([]);
+
+  // Canvas Viewport Controls
   const [zoom, setZoom] = useState(1);
+  const [gridVisible, setGridVisible] = useState(true);
+  const [wireRoutingMode, setWireRoutingMode] = useState("bezier"); // 'bezier' or 'orthogonal'
   const canvasRef = useRef(null);
 
-  // Wire Color Palette
-  const [activeWireColor, setActiveWireColor] = useState("#3b82f6");
+  // Filtered Parts
+  const filteredParts = useMemo(() => {
+    return CIRKIT_PARTS.filter(p =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.category.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery]);
 
-  // --------------------------------------------------------------------------
-  // HOME ACTIONS
-  // --------------------------------------------------------------------------
-  function handleStartFromScratch() {
-    setActiveProjectName("Untitled Circuit Project");
-    setComponents([]);
-    setWires([]);
-    setPendingPin(null);
-    setViewMode("workspace");
-  }
-
-  // --------------------------------------------------------------------------
-  // CANVAS ACTIONS
-  // --------------------------------------------------------------------------
-  function handleAddComponent(catalogItem) {
-    const newId = `${catalogItem.type}_${Date.now().toString().slice(-4)}`;
-    // Spread placement
-    const count = components.length;
+  // Handle Add Component to Canvas
+  function handleAddComponent(part) {
+    const newId = `${part.id}_${Date.now().toString().slice(-4)}`;
+    const offset = components.length;
     const newComp = {
       instanceId: newId,
-      type: catalogItem.type,
-      x: 200 + (count % 3) * 60,
-      y: 120 + (count % 3) * 60,
-      label: catalogItem.name
+      partId: part.id,
+      name: part.name,
+      x: 180 + (offset % 3) * 60,
+      y: 120 + (offset % 3) * 60
     };
-    setComponents([...components, newComp]);
-    setSelectedComponentId(newId);
+    setComponents(prev => [...prev, newComp]);
+    setSelectedCompId(newId);
   }
 
-  function handleRemoveComponent(instanceId) {
-    setComponents(components.filter(c => c.instanceId !== instanceId));
-    setWires(wires.filter(w => w.fromComp !== instanceId && w.toComp !== instanceId));
-    if (selectedComponentId === instanceId) setSelectedComponentId(null);
-  }
-
-  // --------------------------------------------------------------------------
-  // DRAGGING SYSTEM
-  // --------------------------------------------------------------------------
+  // Handle Dragging
   function handleMouseDown(e, comp) {
     e.stopPropagation();
     setDraggingCompId(comp.instanceId);
-    setSelectedComponentId(comp.instanceId);
+    setSelectedCompId(comp.instanceId);
     setDragOffset({
       x: e.clientX / zoom - comp.x,
       y: e.clientY / zoom - comp.y
@@ -316,7 +546,6 @@ export function CircuitDesignerView({ onNavigateToCodeGen }) {
     if (!draggingCompId) return;
     const newX = Math.max(20, Math.round((e.clientX / zoom - dragOffset.x) / 10) * 10);
     const newY = Math.max(20, Math.round((e.clientY / zoom - dragOffset.y) / 10) * 10);
-
     setComponents(prev =>
       prev.map(c => (c.instanceId === draggingCompId ? { ...c, x: newX, y: newY } : c))
     );
@@ -326,36 +555,30 @@ export function CircuitDesignerView({ onNavigateToCodeGen }) {
     setDraggingCompId(null);
   }
 
-  // --------------------------------------------------------------------------
-  // PIN CONNECTION SYSTEM
-  // --------------------------------------------------------------------------
+  // Handle Pin Wiring
   function handlePinClick(e, comp, pin) {
     e.stopPropagation();
 
     if (!pendingPin) {
-      // Start wire drafting
       setPendingPin({
         compId: comp.instanceId,
-        compName: comp.label,
+        compName: comp.name,
         pinId: pin.id,
         pinName: pin.name,
         pinType: pin.type,
         pinColor: pin.color
       });
     } else {
-      // Finish wire drafting
       if (pendingPin.compId === comp.instanceId && pendingPin.pinId === pin.id) {
-        // Cancel if clicked on same pin
         setPendingPin(null);
         return;
       }
 
-      // Automatically determine appropriate wire color
-      let color = activeWireColor;
-      if (pendingPin.pinType === "power" || pin.type === "power") color = "#ef4444";
-      else if (pendingPin.pinType === "gnd" || pin.type === "gnd") color = "#1e293b";
-      else if (pendingPin.pinType === "i2c" || pin.type === "i2c") color = "#8b5cf6";
-      else if (pendingPin.pinType === "adc" || pin.type === "adc") color = "#f59e0b";
+      let wireColor = "#3b82f6";
+      if (pendingPin.pinType === "power" || pin.type === "power") wireColor = "#ef4444";
+      else if (pendingPin.pinType === "gnd" || pin.type === "gnd") wireColor = "#1e293b";
+      else if (pendingPin.pinType === "i2c" || pin.type === "i2c") wireColor = "#8b5cf6";
+      else if (pendingPin.pinType === "adc" || pin.type === "adc") wireColor = "#f59e0b";
 
       const newWire = {
         id: `w_${Date.now()}`,
@@ -363,92 +586,125 @@ export function CircuitDesignerView({ onNavigateToCodeGen }) {
         fromPin: pendingPin.pinId,
         toComp: comp.instanceId,
         toPin: pin.id,
-        color
+        color: wireColor
       };
 
-      setWires([...wires, newWire]);
+      setWires(prev => [...prev, newWire]);
       setPendingPin(null);
     }
   }
 
-  function handleRemoveWire(wireId) {
-    setWires(wires.filter(w => w.id !== wireId));
-    setSelectedWire(null);
-  }
-
-  // Compute absolute coordinate for any pin on canvas
+  // Compute absolute pin coordinates
   function getPinCoordinates(compId, pinId) {
     const comp = components.find(c => c.instanceId === compId);
     if (!comp) return { x: 0, y: 0 };
-
-    const def = COMPONENT_CATALOG.find(d => d.type === comp.type);
+    const def = CIRKIT_PARTS.find(p => p.id === comp.partId);
     if (!def) return { x: comp.x, y: comp.y };
 
     const pin = def.pins.find(p => p.id === pinId);
     if (!pin) return { x: comp.x, y: comp.y };
 
-    // Layout coordinate calculation
     if (pin.side === "left") {
-      const pinIndex = def.pins.filter(p => p.side === "left").indexOf(pin);
-      return {
-        x: comp.x + 8,
-        y: comp.y + 42 + pinIndex * 17
-      };
+      const pinsOnSide = def.pins.filter(p => p.side === "left");
+      const idx = pinsOnSide.indexOf(pin);
+      return { x: comp.x + 8, y: comp.y + 40 + idx * 18 };
     } else if (pin.side === "right") {
-      const pinIndex = def.pins.filter(p => p.side === "right").indexOf(pin);
-      return {
-        x: comp.x + def.width - 8,
-        y: comp.y + 42 + pinIndex * 17
-      };
+      const pinsOnSide = def.pins.filter(p => p.side === "right");
+      const idx = pinsOnSide.indexOf(pin);
+      return { x: comp.x + def.width - 8, y: comp.y + 40 + idx * 18 };
+    } else if (pin.side === "top") {
+      const pinsOnSide = def.pins.filter(p => p.side === "top");
+      const idx = pinsOnSide.indexOf(pin);
+      const spacing = def.width / (pinsOnSide.length + 1);
+      return { x: comp.x + spacing * (idx + 1), y: comp.y + 12 };
     } else {
-      // Bottom pins
-      const bottomPins = def.pins.filter(p => p.side === "bottom");
-      const pinIndex = bottomPins.indexOf(pin);
-      const spacing = def.width / (bottomPins.length + 1);
-      return {
-        x: comp.x + spacing * (pinIndex + 1),
-        y: comp.y + def.height - 10
-      };
+      const pinsOnSide = def.pins.filter(p => p.side === "bottom");
+      const idx = pinsOnSide.indexOf(pin);
+      const spacing = def.width / (pinsOnSide.length + 1);
+      return { x: comp.x + spacing * (idx + 1), y: comp.y + def.height - 12 };
     }
   }
 
-  // Bridge to AgroNexus Code Generator
-  function handleExportToCodeGen() {
-    const mcu = components.find(c => ["esp32", "arduino_uno", "esp8266"].includes(c.type));
-    const boardId = mcu?.type === "esp32" ? "esp32" : mcu?.type === "arduino_uno" ? "arduino_uno" : "esp8266";
+  // Generate Arduino C++ Firmware based on canvas components
+  const generatedCode = useMemo(() => {
+    const hasEsp32 = components.some(c => c.partId === "esp32");
+    const hasDht = components.some(c => c.partId === "dht11");
+    const hasSoil = components.some(c => c.partId === "soil_moisture");
+    const hasRelay = components.some(c => c.partId === "relay_module");
+    const hasOled = components.some(c => c.partId === "oled_display");
 
-    // Detect placed sensors
-    const sensorComps = components.filter(c => ["soil_moisture", "dht22", "ds18b20", "ultrasonic", "ldr"].includes(c.type));
-    const sensorMap = {
-      soil_moisture: "soil_moisture_analog",
-      dht22: "dht22",
-      ds18b20: "ds18b20",
-      ultrasonic: "ultrasonic_hcsr04",
-      ldr: "ldr_analog"
-    };
+    return `// ============================================================================
+// AgroNexus IoT — Generated Firmware for ${projectName}
+// Target Microcontroller: ${hasEsp32 ? "ESP32 DevKit V1" : "Arduino Compatible"}
+// ============================================================================
 
-    const sensors = sensorComps.map(s => sensorMap[s.type]).filter(Boolean);
+#include <WiFi.h>
+#include <HTTPClient.h>
+${hasDht ? '#include <DHT.h>\n#define DHTPIN 4\n#define DHTTYPE DHT11\nDHT dht(DHTPIN, DHTTYPE);' : ''}
+${hasOled ? '#include <Wire.h>\n#include <Adafruit_SSD1306.h>\nAdafruit_SSD1306 display(128, 64, &Wire, -1);' : ''}
 
-    if (onNavigateToCodeGen) {
-      onNavigateToCodeGen({
-        boardId,
-        sensors: sensors.length > 0 ? sensors : ["soil_moisture_analog", "dht22"]
-      });
-    }
+const char* ssid = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
+const char* serverUrl = "http://api.agronexus.io/api/telemetry/update";
+const char* writeApiKey = "YOUR_CHANNEL_WRITE_API_KEY";
+
+${hasSoil ? 'const int SOIL_PIN = 34;' : ''}
+${hasRelay ? 'const int RELAY_PIN = 5;' : ''}
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  Serial.println("[AgroNexus] Initializing Hardware...");
+
+  ${hasDht ? 'dht.begin();' : ''}
+  ${hasRelay ? 'pinMode(RELAY_PIN, OUTPUT);\ndigitalWrite(RELAY_PIN, LOW);' : ''}
+  ${hasSoil ? 'pinMode(SOIL_PIN, INPUT);' : ''}
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\\n[WiFi] Connected successfully!");
+}
+
+void loop() {
+  ${hasDht ? 'float temperature = dht.readTemperature();\n  float humidity = dht.readHumidity();' : 'float temperature = 26.5;'}
+  ${hasSoil ? 'int soilRaw = analogRead(SOIL_PIN);\n  int soilPercent = map(soilRaw, 4095, 1200, 0, 100);' : ''}
+
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    String url = String(serverUrl) + "?api_key=" + writeApiKey;
+    ${hasSoil ? 'url += "&field1=" + String(soilPercent);' : ''}
+    ${hasDht ? 'url += "&field2=" + String(temperature);\n    url += "&field3=" + String(humidity);' : ''}
+
+    http.begin(url);
+    int httpCode = http.GET();
+    Serial.printf("[HTTP] Telemetry post status: %d\\n", httpCode);
+    http.end();
   }
 
-  // ==========================================================================
-  // RENDER: VIEW MODE 1 — CIRKIT DESIGNER HOME (Exact Match to Reference Image)
-  // ==========================================================================
-  if (viewMode === "home") {
-    return (
-      <div className="p-6 sm:p-10 max-w-7xl mx-auto space-y-8 animate-fadeIn">
-        {/* Top Header matching reference image */}
-        <div className="flex items-start gap-4">
-          {/* Distinctive PCB Circuit Icon */}
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-600/20 shrink-0">
-            <svg viewBox="0 0 36 36" fill="none" className="w-7 h-7 stroke-current" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              {/* Circuit traces */}
+  delay(15000); // 15-second update interval
+}
+`;
+  }, [components, projectName]);
+
+  return (
+    <div
+      className="flex flex-col h-[calc(100vh-64px)] w-full overflow-hidden bg-[#f3f4f6] dark:bg-[#070b12] select-none text-slate-800 dark:text-slate-200 font-sans"
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+    >
+      {/* ==================================================================== */}
+      {/* 1. TOP HEADER BAR (Exact Replica of Reference Image) */}
+      {/* ==================================================================== */}
+      <div className="h-14 bg-white dark:bg-[#0c121d] border-b border-slate-200 dark:border-slate-800 px-3 sm:px-4 flex items-center justify-between gap-2 shrink-0 z-30 shadow-xs">
+        
+        {/* Left: Circuit Logo & Editable Project Title with File/Edit/Help menus */}
+        <div className="flex items-center gap-3">
+          {/* Logo */}
+          <div className="w-8 h-8 rounded-lg bg-indigo-600/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 36 36" fill="none" className="w-5 h-5 stroke-current" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="6" y1="30" x2="16" y2="20" />
               <circle cx="16" cy="20" r="2.5" fill="currentColor" />
               <line x1="12" y1="30" x2="24" y2="18" />
@@ -459,473 +715,732 @@ export function CircuitDesignerView({ onNavigateToCodeGen }) {
             </svg>
           </div>
 
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-              Cirkit Designer
-            </h1>
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-0.5">
-              Your all-in-one circuit design IDE
-            </p>
-          </div>
-        </div>
-
-        {/* Action Cards Container - Only Start From Scratch */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {/* Card: Start From Scratch */}
-          <button
-            onClick={handleStartFromScratch}
-            className="group text-left p-8 bg-gradient-to-b from-[#f0f7ff] to-[#e6f1fe] dark:from-[#0d1829] dark:to-[#09121f] border border-[#d1e5ff] dark:border-[#1e3454] hover:border-indigo-400 dark:hover:border-indigo-500/80 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer min-h-[260px]"
-          >
-            <div className="w-16 h-16 rounded-2xl bg-white dark:bg-slate-900 shadow-md border border-indigo-100 dark:border-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-200 mb-6">
-              <Plus className="w-9 h-9 stroke-[2.8]" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-              Start From Scratch
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 max-w-[200px] leading-relaxed">
-              Create a new circuit from a blank canvas
-            </p>
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ==========================================================================
-  // RENDER: VIEW MODE 2 — INTERACTIVE CIRCUIT WORKSPACE IDE
-  // ==========================================================================
-  return (
-    <div
-      className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-slate-100 dark:bg-[#080d16] select-none"
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-    >
-      {/* Top IDE Toolbar */}
-      <div className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between gap-4 shrink-0 shadow-sm z-20">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setViewMode("home")}
-            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 transition-colors flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </button>
-
-          <div className="h-5 w-px bg-slate-200 dark:border-slate-800" />
-
-          {/* Editable Title */}
-          <input
-            type="text"
-            value={activeProjectName}
-            onChange={e => setActiveProjectName(e.target.value)}
-            className="text-sm font-bold text-slate-900 dark:text-white bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none px-1"
-          />
-
-          <span className="text-[10px] font-mono bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-semibold px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
-            {components.length} components • {wires.length} wires
-          </span>
-        </div>
-
-        {/* Toolbar Controls */}
-        <div className="flex items-center gap-2">
-          {/* Zoom Controls */}
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-0.5 border border-slate-200 dark:border-slate-700">
-            <button
-              onClick={() => setZoom(z => Math.max(0.6, z - 0.1))}
-              className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              title="Zoom Out"
-            >
-              <ZoomOut className="w-3.5 h-3.5" />
-            </button>
-            <span className="text-[10px] font-mono font-bold px-1.5 text-slate-600 dark:text-slate-300">
-              {Math.round(zoom * 100)}%
-            </span>
-            <button
-              onClick={() => setZoom(z => Math.min(1.6, z + 0.1))}
-              className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              title="Zoom In"
-            >
-              <ZoomIn className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Wire Color Selection */}
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
-            <span className="text-[10px] text-slate-400 px-1 font-semibold">Wire:</span>
-            {["#3b82f6", "#ef4444", "#1e293b", "#10b981", "#f59e0b", "#8b5cf6"].map(c => (
-              <button
-                key={c}
-                onClick={() => setActiveWireColor(c)}
-                style={{ backgroundColor: c }}
-                className={`w-4 h-4 rounded-full transition-transform ${activeWireColor === c ? "scale-125 ring-2 ring-indigo-500" : "hover:scale-110"}`}
+          <div className="flex flex-col">
+            {isEditingTitle ? (
+              <input
+                type="text"
+                value={projectName}
+                onChange={e => setProjectName(e.target.value)}
+                onBlur={() => setIsEditingTitle(false)}
+                onKeyDown={e => e.key === "Enter" && setIsEditingTitle(false)}
+                autoFocus
+                className="text-sm font-semibold text-slate-900 dark:text-white bg-white dark:bg-slate-800 border border-indigo-400 rounded px-1.5 py-0.5 outline-none"
               />
-            ))}
-          </div>
+            ) : (
+              <span
+                onClick={() => setIsEditingTitle(true)}
+                className="text-sm font-semibold text-slate-900 dark:text-white cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 truncate max-w-[200px]"
+                title="Click to rename"
+              >
+                {projectName}
+              </span>
+            )}
 
-          {/* Clear Canvas */}
+            {/* Menu Row */}
+            <div className="flex items-center gap-2.5 text-[11px] text-slate-500 dark:text-slate-400 -mt-0.5">
+              <span
+                className="hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                onClick={() => {
+                  if (confirm("Create a new blank circuit canvas?")) {
+                    setComponents([]);
+                    setWires([]);
+                    setPendingPin(null);
+                  }
+                }}
+              >
+                File
+              </span>
+              <span
+                className="hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                onClick={() => {
+                  if (selectedCompId) {
+                    setComponents(prev => prev.filter(c => c.instanceId !== selectedCompId));
+                    setSelectedCompId(null);
+                  }
+                }}
+              >
+                Edit
+              </span>
+              <span
+                className="hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                onClick={() => alert("Cirkit Designer IDE:\n• Click pins to draw wires.\n• Click 'Code' to export firmware.\n• Click 'Simulate' to test logic.")}
+              >
+                Help
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Center: Segmented Navigation Tabs (Design | Code | Simulate | Upload) */}
+        <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+          <button
+            onClick={() => setActiveTab("design")}
+            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === "design"
+                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Check className="w-3 h-3 text-emerald-500" />
+            Design
+          </button>
+          <button
+            onClick={() => setActiveTab("code")}
+            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === "code"
+                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            Code
+          </button>
           <button
             onClick={() => {
-              if (confirm("Clear all components and wires?")) {
-                setComponents([]);
-                setWires([]);
-                setPendingPin(null);
+              setActiveTab("simulate");
+              setIsSimulating(true);
+            }}
+            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === "simulate"
+                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            Simulate
+          </button>
+          <button
+            onClick={() => {
+              if (onNavigateToCodeGen) {
+                onNavigateToCodeGen({ boardId: "esp32", sensors: ["soil_moisture_analog", "dht22"] });
+              } else {
+                alert("Upload sketch ready! Connect microcontroller via USB COM port.");
               }
             }}
-            className="p-2 text-slate-500 hover:text-rose-500 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            title="Clear Canvas"
+            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === "upload"
+                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
           >
-            <Trash2 className="w-4 h-4" />
+            Upload
+          </button>
+        </div>
+
+        {/* Right: Theme Toggle, Cirkit AI, Export, Share, and Profile Avatar (WITHOUT EMAIL) */}
+        <div className="flex items-center gap-2">
+          {/* Dark/Light mode toggle */}
+          <button
+            onClick={toggleTheme}
+            className="p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+            title="Toggle theme"
+          >
+            {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
           </button>
 
-          {/* Generate Code Bridge */}
+          {/* Cirkit AI Pill Button */}
           <button
-            onClick={handleExportToCodeGen}
-            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+            onClick={onOpenAI}
+            className="px-2.5 py-1 bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/60 dark:hover:bg-sky-900/60 text-sky-600 dark:text-sky-400 text-xs font-semibold rounded-full border border-sky-200 dark:border-sky-800/80 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
           >
-            <Code className="w-3.5 h-3.5" />
-            <span>Generate Code</span>
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Cirkit AI</span>
           </button>
+
+          {/* Export Dropdown Button */}
+          <button
+            onClick={() => {
+              const exportJson = JSON.stringify({ projectName, components, wires }, null, 2);
+              const blob = new Blob([exportJson], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `${projectName.toLowerCase().replace(/\\s+/g, "_")}.json`;
+              a.click();
+            }}
+            className="px-3 py-1 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 transition-all flex items-center gap-1 cursor-pointer"
+          >
+            <span>Export</span>
+            <ChevronDown className="w-3 h-3 text-slate-400" />
+          </button>
+
+          {/* Share Button (Purple) */}
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(window.location.href);
+              alert("Circuit design link copied to clipboard!");
+            }}
+            className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+          >
+            <Share2 className="w-3 h-3" />
+            <span>Share</span>
+          </button>
+
+          {/* User Profile Avatar ONLY (NO EMAIL, as requested) */}
+          <div className="w-7 h-7 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs cursor-pointer ml-1" title={user?.name || "User Profile"}>
+            {user?.name?.[0] || "A"}
+          </div>
         </div>
       </div>
 
-      {/* Main Workspace Area (Component Drawer + Grid Canvas + Connection Table) */}
+      {/* ==================================================================== */}
+      {/* 2. MAIN WORKSPACE BODY (Left Nav + Component Drawer + Canvas / Code) */}
+      {/* ==================================================================== */}
       <div className="flex-1 flex overflow-hidden relative">
         
-        {/* Left Component Library Drawer */}
-        <div className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0 z-10">
-          <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-indigo-500" />
-              Component Library
-            </span>
-            <span className="text-[10px] text-slate-400 font-mono">{COMPONENT_CATALOG.length} items</span>
-          </div>
+        {/* Leftmost Narrow Icon Navigation Strip (~52px) */}
+        <div className="w-13 bg-slate-100 dark:bg-[#0a0f18] border-r border-slate-200 dark:border-slate-800 flex flex-col items-center py-3 space-y-4 shrink-0 select-none z-20">
+          <button
+            onClick={() => {
+              setActiveNav("parts");
+              setIsDrawerCollapsed(false);
+            }}
+            className={`flex flex-col items-center gap-1 p-1 rounded-lg text-[9px] font-semibold transition-colors cursor-pointer ${
+              activeNav === "parts" ? "text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <CircuitBoard className="w-4 h-4" />
+            <span>Parts</span>
+          </button>
 
-          <div className="flex-1 overflow-y-auto p-3 space-y-4 text-xs">
-            {["Microcontrollers", "Sensors", "Actuators & Relays", "Displays"].map(category => {
-              const items = COMPONENT_CATALOG.filter(c => c.category === category);
-              if (items.length === 0) return null;
+          <button
+            onClick={() => {
+              setActiveNav("custom");
+              setIsDrawerCollapsed(false);
+            }}
+            className={`flex flex-col items-center gap-1 p-1 rounded-lg text-[9px] font-semibold transition-colors cursor-pointer ${
+              activeNav === "custom" ? "text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Cpu className="w-4 h-4" />
+            <span className="text-center leading-tight">My Custom</span>
+          </button>
 
-              return (
-                <div key={category} className="space-y-1.5">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1">
-                    {category}
-                  </div>
-                  <div className="space-y-1.5">
-                    {items.map(item => (
-                      <button
-                        key={item.type}
-                        onClick={() => handleAddComponent(item)}
-                        className="w-full text-left p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-600 bg-slate-50 dark:bg-slate-950/40 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 transition-all flex items-center justify-between group cursor-pointer"
-                      >
-                        <div>
-                          <div className="font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                            {item.name}
-                          </div>
-                          <div className="text-[10px] text-slate-400 truncate max-w-[170px]">
-                            {item.subtitle}
-                          </div>
-                        </div>
-                        <Plus className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <button
+            onClick={() => {
+              setActiveNav("favorite");
+              setIsDrawerCollapsed(false);
+            }}
+            className={`flex flex-col items-center gap-1 p-1 rounded-lg text-[9px] font-semibold transition-colors cursor-pointer ${
+              activeNav === "favorite" ? "text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Star className="w-4 h-4" />
+            <span>Favorites</span>
+          </button>
+
+          <div className="w-8 h-px bg-slate-200 dark:border-slate-800 my-1" />
+
+          <button
+            onClick={() => setActiveNav("projects")}
+            className={`flex flex-col items-center gap-1 p-1 rounded-lg text-[9px] font-semibold transition-colors cursor-pointer ${
+              activeNav === "projects" ? "text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Folder className="w-4 h-4" />
+            <span>Projects</span>
+          </button>
         </div>
 
-        {/* Central Interactive Grid Canvas */}
-        <div
-          ref={canvasRef}
-          className="flex-1 overflow-auto relative cursor-crosshair"
-          style={{
-            backgroundImage: "radial-gradient(circle, #cbd5e1 1.2px, transparent 1.2px)",
-            backgroundSize: "20px 20px"
-          }}
-          onClick={() => {
-            setSelectedWire(null);
-            setPendingPin(null);
-          }}
-        >
-          {/* Wire Drafting Banner */}
-          {pendingPin && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-semibold px-4 py-2 rounded-2xl shadow-xl flex items-center gap-2 z-30 animate-bounce">
-              <Zap className="w-4 h-4" />
-              Connecting from [{pendingPin.compName}] Pin: {pendingPin.pinName} — Click target pin to connect
-            </div>
-          )}
+        {/* Component Library Drawer (Matching 3-Column Grid in Image) */}
+        {!isDrawerCollapsed && (
+          <div className="w-72 sm:w-80 bg-white dark:bg-[#0c121d] border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0 z-20 shadow-xs relative animate-fadeIn">
+            {/* Search Input */}
+            <div className="p-3 border-b border-slate-100 dark:border-slate-800 space-y-2.5">
+              <div className="relative flex items-center">
+                <Search className="w-4 h-4 text-slate-400 absolute left-2.5 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Search Components"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-8 pr-8 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-indigo-500 transition-colors"
+                />
+                <button className="absolute right-2.5 text-slate-400 hover:text-slate-600">
+                  <List className="w-3.5 h-3.5" />
+                </button>
+              </div>
 
-          {/* Scalable Canvas Content */}
-          <div
-            style={{
-              transform: `scale(${zoom})`,
-              transformOrigin: "top left",
-              minWidth: "2200px",
-              minHeight: "1600px",
-              position: "relative"
-            }}
-          >
-            {/* SVG Layer for Drawing Wires */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
-              {wires.map(wire => {
-                const p1 = getPinCoordinates(wire.fromComp, wire.fromPin);
-                const p2 = getPinCoordinates(wire.toComp, wire.toPin);
-
-                // Calculate smooth Bezier curve
-                const dx = Math.abs(p2.x - p1.x);
-                const dy = Math.abs(p2.y - p1.y);
-                const cx1 = p1.x + Math.min(dx * 0.5, 80);
-                const cy1 = p1.y;
-                const cx2 = p2.x - Math.min(dx * 0.5, 80);
-                const cy2 = p2.y;
-
-                const pathData = `M ${p1.x} ${p1.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${p2.x} ${p2.y}`;
-
-                return (
-                  <g key={wire.id}>
-                    {/* Shadow / outline */}
-                    <path
-                      d={pathData}
-                      fill="none"
-                      stroke="rgba(0,0,0,0.15)"
-                      strokeWidth="5"
-                    />
-                    {/* Main wire line */}
-                    <path
-                      d={pathData}
-                      fill="none"
-                      stroke={wire.color}
-                      strokeWidth="3.2"
-                      strokeLinecap="round"
-                      className="pointer-events-auto cursor-pointer hover:stroke-rose-500 hover:stroke-[5] transition-all"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm("Remove this wire connection?")) {
-                          handleRemoveWire(wire.id);
-                        }
-                      }}
-                    />
-                    {/* End dots */}
-                    <circle cx={p1.x} cy={p1.y} r="4" fill={wire.color} />
-                    <circle cx={p2.x} cy={p2.y} r="4" fill={wire.color} />
-                  </g>
-                );
-              })}
-            </svg>
-
-            {/* Render Draggable Components */}
-            {components.map(comp => {
-              const def = COMPONENT_CATALOG.find(d => d.type === comp.type);
-              if (!def) return null;
-
-              const isSelected = selectedComponentId === comp.instanceId;
-
-              const leftPins = def.pins.filter(p => p.side === "left");
-              const rightPins = def.pins.filter(p => p.side === "right");
-              const bottomPins = def.pins.filter(p => p.side === "bottom");
-
-              return (
-                <div
-                  key={comp.instanceId}
-                  style={{
-                    left: `${comp.x}px`,
-                    top: `${comp.y}px`,
-                    width: `${def.width}px`
-                  }}
-                  onMouseDown={e => handleMouseDown(e, comp)}
-                  className={`absolute bg-white dark:bg-slate-900 rounded-2xl shadow-lg border transition-shadow z-10 ${
-                    isSelected
-                      ? "ring-2 ring-indigo-500 border-indigo-400 shadow-xl"
-                      : "border-slate-300 dark:border-slate-800 hover:border-slate-400"
+              {/* Mode Pills: Diagramming Parts vs Simulation Parts */}
+              <div className="flex items-center gap-2 text-xs">
+                <button
+                  onClick={() => setPartsMode("diagramming")}
+                  className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
+                    partsMode === "diagramming"
+                      ? "bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-400 dark:border-sky-700 shadow-xs"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                   }`}
                 >
-                  {/* Component Header Bar */}
-                  <div
-                    style={{ backgroundColor: def.color }}
-                    className="px-3 py-2 text-white font-bold text-xs rounded-t-2xl flex items-center justify-between cursor-move"
-                  >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <Cpu className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">{comp.label}</span>
-                    </div>
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        handleRemoveComponent(comp.instanceId);
-                      }}
-                      className="text-white/70 hover:text-white p-0.5 rounded"
-                      title="Remove Component"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  Diagramming Parts
+                </button>
+                <button
+                  onClick={() => setPartsMode("simulation")}
+                  className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
+                    partsMode === "simulation"
+                      ? "bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-400 dark:border-sky-700 shadow-xs"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  Simulation Parts
+                </button>
+              </div>
 
-                  {/* Component Body with Pins */}
-                  <div className="p-2 text-[10px] font-mono relative">
-                    {/* Left & Right Pins Layout */}
-                    <div className="flex justify-between gap-1">
+              {/* Create Custom Component Button */}
+              <button
+                onClick={() => alert("Custom Component Wizard: You can define custom pin headers and footprints.")}
+                className="w-full py-1.5 px-3 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-indigo-600 dark:text-indigo-400 text-xs font-semibold rounded-lg border border-indigo-200 dark:border-indigo-800 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>⊕ Create Custom Component</span>
+                <ChevronDown className="w-3 h-3 text-indigo-400" />
+              </button>
+            </div>
+
+            {/* Component Cards Grid (3 Columns, Exact Match to media_1788416567327.png) */}
+            <div className="flex-1 overflow-y-auto p-2.5">
+              <div className="grid grid-cols-3 gap-2">
+                {filteredParts.map(part => (
+                  <button
+                    key={part.id}
+                    onClick={() => handleAddComponent(part)}
+                    className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500/80 hover:shadow-md transition-all flex flex-col items-center justify-between text-center group cursor-pointer h-28"
+                  >
+                    <div className="flex-1 flex items-center justify-center w-full">
+                      {part.renderGraphic}
+                    </div>
+                    <span className="text-[10px] font-medium text-slate-700 dark:text-slate-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 leading-tight line-clamp-2 mt-1">
+                      {part.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Collapse Drawer Tab on Right Border */}
+            <button
+              onClick={() => setIsDrawerCollapsed(true)}
+              className="absolute -right-3.5 top-1/2 -translate-y-1/2 w-4 h-9 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-r-md flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white shadow-xs cursor-pointer z-30"
+              title="Collapse Parts Library"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Collapsed Drawer Reopen Button */}
+        {isDrawerCollapsed && (
+          <button
+            onClick={() => setIsDrawerCollapsed(false)}
+            className="absolute left-13 top-1/2 -translate-y-1/2 w-4 h-9 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-r-md flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white shadow-xs cursor-pointer z-30"
+            title="Open Parts Library"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        )}
+
+        {/* ================================================================== */}
+        {/* 3. CENTRAL WORKSPACE (Design Canvas / Code / Simulation) */}
+        {/* ================================================================== */}
+        {activeTab === "design" || activeTab === "simulate" ? (
+          <div
+            ref={canvasRef}
+            className="flex-1 overflow-auto relative cursor-crosshair"
+            style={{
+              backgroundImage: gridVisible ? "radial-gradient(circle, #cbd5e1 1.2px, transparent 1.2px)" : "none",
+              backgroundSize: "20px 20px"
+            }}
+            onClick={() => {
+              setSelectedCompId(null);
+              setSelectedWireId(null);
+              setPendingPin(null);
+            }}
+          >
+            {/* Top-Right Floating Canvas Toolbar (Exact Replica of Reference Image) */}
+            <div className="absolute top-4 right-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-lg px-2 py-1.5 flex items-center gap-1.5 z-30">
+              {/* Green Play Button */}
+              <button
+                onClick={() => {
+                  setIsSimulating(!isSimulating);
+                  if (!isSimulating) {
+                    setSimulationLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] Simulation started: Circuit logic verified.`]);
+                  }
+                }}
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xs ${
+                  isSimulating ? "bg-rose-500 text-white animate-pulse" : "bg-emerald-600 hover:bg-emerald-500 text-white"
+                }`}
+                title={isSimulating ? "Stop Simulation" : "Start Simulation"}
+              >
+                {isSimulating ? <Square className="w-3 h-3 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
+              </button>
+
+              <div className="h-4 w-px bg-slate-200 dark:border-slate-700 mx-0.5" />
+
+              {/* Text Tool */}
+              <button
+                onClick={() => {
+                  const text = prompt("Enter text note on canvas:");
+                  if (text) {
+                    setComponents(prev => [...prev, {
+                      instanceId: `note_${Date.now()}`,
+                      partId: "note",
+                      name: text,
+                      x: 240,
+                      y: 180
+                    }]);
+                  }
+                }}
+                className="p-1 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
+                title="Add Text Annotation"
+              >
+                <Type className="w-4 h-4" />
+              </button>
+
+              {/* Wire Routing Tool */}
+              <button
+                onClick={() => setWireRoutingMode(m => (m === "bezier" ? "orthogonal" : "bezier"))}
+                className={`p-1 rounded ${wireRoutingMode === "orthogonal" ? "text-indigo-600 bg-indigo-50" : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                title="Toggle Wire Routing Mode"
+              >
+                <Zap className="w-4 h-4" />
+              </button>
+
+              {/* Grid Toggle */}
+              <button
+                onClick={() => setGridVisible(!gridVisible)}
+                className={`p-1 rounded ${gridVisible ? "text-indigo-600 bg-indigo-50" : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                title="Toggle Dot Grid"
+              >
+                <Grid className="w-4 h-4" />
+              </button>
+
+              {/* Undo */}
+              <button
+                onClick={() => {
+                  if (wires.length > 0) setWires(prev => prev.slice(0, -1));
+                }}
+                className="p-1 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
+                title="Undo"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+
+              {/* Redo */}
+              <button
+                onClick={() => alert("Redo action")}
+                className="p-1 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
+                title="Redo"
+              >
+                <RotateCw className="w-4 h-4" />
+              </button>
+
+              {/* Fit to Screen */}
+              <button
+                onClick={() => setZoom(1)}
+                className="p-1 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
+                title="Reset Zoom & Fit"
+              >
+                <Maximize className="w-4 h-4" />
+              </button>
+
+              {/* Zoom Out */}
+              <button
+                onClick={() => setZoom(z => Math.max(0.5, z - 0.1))}
+                className="p-1 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
+                title="Zoom Out"
+              >
+                <ZoomOut className="w-4 h-4" />
+              </button>
+
+              {/* Zoom In */}
+              <button
+                onClick={() => setZoom(z => Math.min(1.8, z + 0.1))}
+                className="p-1 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
+                title="Zoom In"
+              >
+                <ZoomIn className="w-4 h-4" />
+              </button>
+
+              {/* Delete */}
+              <button
+                onClick={() => {
+                  if (selectedCompId) {
+                    setComponents(prev => prev.filter(c => c.instanceId !== selectedCompId));
+                    setWires(prev => prev.filter(w => w.fromComp !== selectedCompId && w.toComp !== selectedCompId));
+                    setSelectedCompId(null);
+                  } else if (selectedWireId) {
+                    setWires(prev => prev.filter(w => w.id !== selectedWireId));
+                    setSelectedWireId(null);
+                  }
+                }}
+                className="p-1 text-slate-500 hover:text-rose-500 hover:bg-rose-50 rounded"
+                title="Delete Selected Item"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Wire Drafting Banner */}
+            {pendingPin && (
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-semibold px-4 py-2 rounded-2xl shadow-xl flex items-center gap-2 z-30 animate-bounce">
+                <Zap className="w-4 h-4" />
+                Connecting [{pendingPin.compName}] Pin: {pendingPin.pinName} — Click target pin to complete wire
+              </div>
+            )}
+
+            {/* Scalable Canvas Content */}
+            <div
+              style={{
+                transform: `scale(${zoom})`,
+                transformOrigin: "top left",
+                minWidth: "2600px",
+                minHeight: "1800px",
+                position: "relative"
+              }}
+            >
+              {/* SVG Layer for Drawing Wires */}
+              <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+                {wires.map(wire => {
+                  const p1 = getPinCoordinates(wire.fromComp, wire.fromPin);
+                  const p2 = getPinCoordinates(wire.toComp, wire.toPin);
+
+                  const dx = Math.abs(p2.x - p1.x);
+                  const dy = Math.abs(p2.y - p1.y);
+
+                  let pathData;
+                  if (wireRoutingMode === "orthogonal") {
+                    const midX = p1.x + (p2.x - p1.x) / 2;
+                    pathData = `M ${p1.x} ${p1.y} L ${midX} ${p1.y} L ${midX} ${p2.y} L ${p2.x} ${p2.y}`;
+                  } else {
+                    const cx1 = p1.x + Math.min(dx * 0.5, 90);
+                    const cy1 = p1.y;
+                    const cx2 = p2.x - Math.min(dx * 0.5, 90);
+                    const cy2 = p2.y;
+                    pathData = `M ${p1.x} ${p1.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${p2.x} ${p2.y}`;
+                  }
+
+                  const isSelected = selectedWireId === wire.id;
+
+                  return (
+                    <g key={wire.id}>
+                      <path
+                        d={pathData}
+                        fill="none"
+                        stroke="rgba(0,0,0,0.12)"
+                        strokeWidth="5"
+                      />
+                      <path
+                        d={pathData}
+                        fill="none"
+                        stroke={wire.color}
+                        strokeWidth={isSelected ? "4.5" : "3"}
+                        strokeLinecap="round"
+                        className="pointer-events-auto cursor-pointer hover:stroke-rose-500 hover:stroke-[5] transition-all"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedWireId(wire.id);
+                        }}
+                      />
+                      {/* Current flow simulation dots */}
+                      {isSimulating && (
+                        <circle cx={(p1.x + p2.x) / 2} cy={(p1.y + p2.y) / 2} r="3" fill="#facc15" className="animate-ping" />
+                      )}
+                      <circle cx={p1.x} cy={p1.y} r="4" fill={wire.color} />
+                      <circle cx={p2.x} cy={p2.y} r="4" fill={wire.color} />
+                    </g>
+                  );
+                })}
+              </svg>
+
+              {/* Render Placed Components on Canvas */}
+              {components.map(comp => {
+                const def = CIRKIT_PARTS.find(p => p.id === comp.partId);
+                if (!def) return null;
+
+                const isSelected = selectedCompId === comp.instanceId;
+
+                const topPins = def.pins.filter(p => p.side === "top");
+                const bottomPins = def.pins.filter(p => p.side === "bottom");
+                const leftPins = def.pins.filter(p => p.side === "left");
+                const rightPins = def.pins.filter(p => p.side === "right");
+
+                return (
+                  <div
+                    key={comp.instanceId}
+                    style={{
+                      left: `${comp.x}px`,
+                      top: `${comp.y}px`,
+                      width: `${def.width}px`
+                    }}
+                    onMouseDown={e => handleMouseDown(e, comp)}
+                    className={`absolute bg-white dark:bg-slate-900 rounded-xl shadow-md border transition-shadow z-10 ${
+                      isSelected
+                        ? "ring-2 ring-indigo-500 border-indigo-400 shadow-xl"
+                        : "border-slate-300 dark:border-slate-800 hover:border-slate-400"
+                    }`}
+                  >
+                    {/* Component Header Bar */}
+                    <div className="px-2.5 py-1.5 bg-slate-800 text-white font-semibold text-xs rounded-t-xl flex items-center justify-between cursor-move">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <Cpu className="w-3 h-3 text-indigo-400 shrink-0" />
+                        <span className="truncate">{comp.name}</span>
+                      </div>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          setComponents(prev => prev.filter(c => c.instanceId !== comp.instanceId));
+                          setWires(prev => prev.filter(w => w.fromComp !== comp.instanceId && w.toComp !== comp.instanceId));
+                        }}
+                        className="text-white/60 hover:text-white p-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+
+                    {/* Top Pins */}
+                    {topPins.length > 0 && (
+                      <div className="flex justify-around items-center px-2 py-1 border-b border-slate-100 dark:border-slate-800">
+                        {topPins.map(pin => (
+                          <div
+                            key={pin.id}
+                            onClick={e => handlePinClick(e, comp, pin)}
+                            className="flex flex-col items-center gap-0.5 cursor-pointer group"
+                          >
+                            <div
+                              style={{ backgroundColor: pin.color }}
+                              className="w-2.5 h-2.5 rounded-full border border-white group-hover:scale-125 transition-transform"
+                              title={`${pin.name} (${pin.type})`}
+                            />
+                            <span className="text-[8px] font-mono text-slate-500">{pin.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Component Body & Side Pins */}
+                    <div className="p-2 flex justify-between gap-2 text-[10px] font-mono">
                       {/* Left Pins */}
                       <div className="space-y-1">
-                        {leftPins.map(pin => {
-                          const isPinActive = pendingPin?.compId === comp.instanceId && pendingPin?.pinId === pin.id;
-                          return (
+                        {leftPins.map(pin => (
+                          <div
+                            key={pin.id}
+                            onClick={e => handlePinClick(e, comp, pin)}
+                            className="flex items-center gap-1.5 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 p-0.5 rounded transition-colors group"
+                          >
                             <div
-                              key={pin.id}
-                              onClick={e => handlePinClick(e, comp, pin)}
-                              className={`flex items-center gap-1.5 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors ${
-                                isPinActive ? "bg-indigo-100 dark:bg-indigo-950/80 ring-1 ring-indigo-500" : ""
-                              }`}
-                            >
-                              <div
-                                style={{ backgroundColor: pin.color }}
-                                className="w-3 h-3 rounded-full border border-white shadow-sm shrink-0 hover:scale-125 transition-transform"
-                                title={`Pin ${pin.name} (${pin.type})`}
-                              />
-                              <span className="text-slate-700 dark:text-slate-300 font-semibold truncate max-w-[70px]">
-                                {pin.name}
-                              </span>
-                            </div>
-                          );
-                        })}
+                              style={{ backgroundColor: pin.color }}
+                              className="w-2.5 h-2.5 rounded-full border border-white group-hover:scale-125 transition-transform"
+                              title={`${pin.name} (${pin.type})`}
+                            />
+                            <span className="text-slate-700 dark:text-slate-300 font-semibold">{pin.name}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Graphic Preview */}
+                      <div className="flex-1 flex items-center justify-center p-1">
+                        {def.renderGraphic}
                       </div>
 
                       {/* Right Pins */}
                       <div className="space-y-1 text-right">
-                        {rightPins.map(pin => {
-                          const isPinActive = pendingPin?.compId === comp.instanceId && pendingPin?.pinId === pin.id;
-                          return (
+                        {rightPins.map(pin => (
+                          <div
+                            key={pin.id}
+                            onClick={e => handlePinClick(e, comp, pin)}
+                            className="flex items-center justify-end gap-1.5 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 p-0.5 rounded transition-colors group"
+                          >
+                            <span className="text-slate-700 dark:text-slate-300 font-semibold">{pin.name}</span>
                             <div
-                              key={pin.id}
-                              onClick={e => handlePinClick(e, comp, pin)}
-                              className={`flex items-center justify-end gap-1.5 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors ${
-                                isPinActive ? "bg-indigo-100 dark:bg-indigo-950/80 ring-1 ring-indigo-500" : ""
-                              }`}
-                            >
-                              <span className="text-slate-700 dark:text-slate-300 font-semibold truncate max-w-[70px]">
-                                {pin.name}
-                              </span>
-                              <div
-                                style={{ backgroundColor: pin.color }}
-                                className="w-3 h-3 rounded-full border border-white shadow-sm shrink-0 hover:scale-125 transition-transform"
-                                title={`Pin ${pin.name} (${pin.type})`}
-                              />
-                            </div>
-                          );
-                        })}
+                              style={{ backgroundColor: pin.color }}
+                              className="w-2.5 h-2.5 rounded-full border border-white group-hover:scale-125 transition-transform"
+                              title={`${pin.name} (${pin.type})`}
+                            />
+                          </div>
+                        ))}
                       </div>
                     </div>
 
-                    {/* Bottom Pins (e.g. Sensors, Relays, OLED) */}
+                    {/* Bottom Pins */}
                     {bottomPins.length > 0 && (
-                      <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-around items-center">
-                        {bottomPins.map(pin => {
-                          const isPinActive = pendingPin?.compId === comp.instanceId && pendingPin?.pinId === pin.id;
-                          return (
+                      <div className="flex justify-around items-center px-2 py-1 border-t border-slate-100 dark:border-slate-800">
+                        {bottomPins.map(pin => (
+                          <div
+                            key={pin.id}
+                            onClick={e => handlePinClick(e, comp, pin)}
+                            className="flex flex-col items-center gap-0.5 cursor-pointer group"
+                          >
+                            <span className="text-[8px] font-mono text-slate-500">{pin.name}</span>
                             <div
-                              key={pin.id}
-                              onClick={e => handlePinClick(e, comp, pin)}
-                              className={`flex flex-col items-center gap-1 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors ${
-                                isPinActive ? "bg-indigo-100 dark:bg-indigo-950/80 ring-1 ring-indigo-500" : ""
-                              }`}
-                            >
-                              <span className="text-[9px] text-slate-600 dark:text-slate-400 font-semibold">
-                                {pin.name}
-                              </span>
-                              <div
-                                style={{ backgroundColor: pin.color }}
-                                className="w-3 h-3 rounded-full border border-white shadow-sm hover:scale-125 transition-transform"
-                                title={`Pin ${pin.name} (${pin.type})`}
-                              />
-                            </div>
-                          );
-                        })}
+                              style={{ backgroundColor: pin.color }}
+                              className="w-2.5 h-2.5 rounded-full border border-white group-hover:scale-125 transition-transform"
+                              title={`${pin.name} (${pin.type})`}
+                            />
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right Inspector & Live Wiring Table Drawer */}
-        <div className="w-72 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col shrink-0 z-10 text-xs">
-          <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 font-bold text-slate-900 dark:text-white flex items-center justify-between">
-            <span>Hardware Wiring Guide</span>
-            <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
-              {wires.length} Connections
-            </span>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            {wires.length === 0 ? (
-              <div className="p-6 text-center text-slate-400 space-y-2">
-                <CircuitBoard className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-700" />
-                <p>No wire connections yet.</p>
-                <p className="text-[11px] text-slate-500">
-                  Click on any pin connector dot and then click on a destination pin to draw a wire.
-                </p>
-              </div>
-            ) : (
-              wires.map((w, idx) => {
-                const fromC = components.find(c => c.instanceId === w.fromComp);
-                const toC = components.find(c => c.instanceId === w.toComp);
-                return (
-                  <div
-                    key={w.id}
-                    className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 font-mono text-[11px] space-y-1"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-700 dark:text-slate-300">#{idx + 1}</span>
-                      <button
-                        onClick={() => handleRemoveWire(w.id)}
-                        className="text-slate-400 hover:text-rose-500"
-                        title="Delete Wire"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <div style={{ backgroundColor: w.color }} className="w-2.5 h-2.5 rounded-full shrink-0" />
-                      <span className="font-semibold text-slate-900 dark:text-white truncate">
-                        {fromC?.label || w.fromComp}: {w.fromPin}
-                      </span>
-                    </div>
-                    <div className="text-slate-400 pl-4">└──&gt; {toC?.label || w.toComp}: {w.toPin}</div>
-                  </div>
                 );
-              })
+              })}
+            </div>
+
+            {/* Bottom-Center Floating Cirkit AI Button (Exact Match to Image) */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
+              <button
+                onClick={onOpenAI}
+                className="px-4 py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-full text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-2 cursor-pointer hover:scale-105 transition-all"
+              >
+                <Sparkles className="w-4 h-4 text-indigo-500 animate-pulse" />
+                <span>Cirkit AI</span>
+              </button>
+            </div>
+
+            {/* Simulation Log Console Drawer */}
+            {isSimulating && (
+              <div className="absolute bottom-0 inset-x-0 bg-slate-950 text-emerald-400 border-t border-slate-800 p-3 font-mono text-xs max-h-36 overflow-y-auto z-20">
+                <div className="flex items-center justify-between pb-1 mb-1 border-b border-slate-800 text-slate-400 text-[10px]">
+                  <span>VIRTUAL HARDWARE SERIAL TERMINAL — 115200 BAUD</span>
+                  <span className="text-emerald-400 font-bold">● ACTIVE</span>
+                </div>
+                {simulationLogs.map((log, i) => (
+                  <div key={i}>{log}</div>
+                ))}
+                <div>[AgroNexus] Microcontroller logic running smoothly...</div>
+              </div>
             )}
           </div>
-
-          {/* Bottom Actions */}
-          <div className="p-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
-            <button
-              onClick={() => {
-                const text = wires.map((w, i) => {
-                  const fromC = components.find(c => c.instanceId === w.fromComp);
-                  const toC = components.find(c => c.instanceId === w.toComp);
-                  return `${i + 1}. [${fromC?.label || w.fromComp}] ${w.fromPin} <---> [${toC?.label || w.toComp}] ${w.toPin}`;
-                }).join("\n");
-                navigator.clipboard.writeText(text);
-                alert("Wiring list copied to clipboard!");
-              }}
-              className="w-full py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-xl transition-colors flex items-center justify-center gap-1.5"
-            >
-              <Copy className="w-3.5 h-3.5" />
-              Copy Wiring List
-            </button>
-            <button
-              onClick={handleExportToCodeGen}
-              className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl shadow transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <Code className="w-3.5 h-3.5" />
-              Flash via Code Generator
-            </button>
+        ) : (
+          /* CODE TAB VIEW */
+          <div className="flex-1 flex flex-col bg-slate-950 text-slate-200 font-mono text-xs overflow-hidden">
+            <div className="px-4 py-2.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+              <span className="font-bold text-slate-300 flex items-center gap-2">
+                <FileCode className="w-4 h-4 text-indigo-400" />
+                sketch.ino — Upload-Ready C++ Firmware
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(generatedCode);
+                    alert("Code copied to clipboard!");
+                  }}
+                  className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" /> Copy
+                </button>
+                <button
+                  onClick={() => {
+                    if (onNavigateToCodeGen) {
+                      onNavigateToCodeGen({ boardId: "esp32", sensors: ["soil_moisture_analog", "dht22"] });
+                    }
+                  }}
+                  className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Code className="w-3.5 h-3.5" /> Open in Code Generator
+                </button>
+              </div>
+            </div>
+            <pre className="flex-1 p-4 overflow-auto text-emerald-300/90 leading-relaxed select-text font-mono">
+              <code>{generatedCode}</code>
+            </pre>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

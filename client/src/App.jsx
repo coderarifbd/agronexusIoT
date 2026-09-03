@@ -182,6 +182,7 @@ function MainApp() {
             {currentTab === "circuit" && (
               <CircuitDesignerView
                 onNavigateToCodeGen={handleOpenCodeGen}
+                onOpenAI={() => setShowAI(true)}
               />
             )}
             {currentTab === "profile" && (
