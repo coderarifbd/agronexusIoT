@@ -15,7 +15,7 @@ import {
 import { api } from "../../services/api";
 import { useSocket } from "../../context/SocketContext";
 import { useTheme } from "../../context/ThemeContext";
-import { ExternalLink, MessageSquare, Edit3, X, RefreshCw, FileText, FileSpreadsheet } from "lucide-react";
+import { ExternalLink, MessageSquare, Edit3, X, RefreshCw, FileText, FileSpreadsheet, Activity } from "lucide-react";
 import * as XLSX from "xlsx";
 import { EditChartOptionsModal } from "./EditChartOptionsModal";
 
@@ -187,22 +187,58 @@ export function SingleFieldChart({
   const strokeColor = chartOptions.color || "#d62020";
   const bgColor = isDark ? "#0f172a" : (chartOptions.background || "#ffffff");
 
-  const yDomain = [
-    chartOptions.yAxisMin !== null ? chartOptions.yAxisMin : "auto",
-    chartOptions.yAxisMax !== null ? chartOptions.yAxisMax : "auto"
-  ];
+  // Smart Domain Calculation to avoid squashed zero lines or out-of-bounds readings
+  const yDomain = React.useMemo(() => {
+    if (chartOptions.yAxisMin !== null && chartOptions.yAxisMax !== null) {
+      return [chartOptions.yAxisMin, chartOptions.yAxisMax];
+    }
+    if (!data || data.length === 0) return [0, 10];
+    const vals = data.map((d) => Number(d.value)).filter((v) => !isNaN(v));
+    if (vals.length === 0) return [0, 10];
+    const min = Math.min(...vals);
+    const max = Math.max(...vals);
+
+    if (min === max) {
+      const pad = min === 0 ? 5 : Math.max(2, Math.abs(min) * 0.2);
+      return [
+        chartOptions.yAxisMin !== null ? chartOptions.yAxisMin : Math.max(0, min - pad),
+        chartOptions.yAxisMax !== null ? chartOptions.yAxisMax : max + pad
+      ];
+    }
+
+    const pad = (max - min) * 0.15;
+    return [
+      chartOptions.yAxisMin !== null ? chartOptions.yAxisMin : Math.floor(Math.max(0, min - pad)),
+      chartOptions.yAxisMax !== null ? chartOptions.yAxisMax : Math.ceil(max + pad)
+    ];
+  }, [data, chartOptions.yAxisMin, chartOptions.yAxisMax]);
+
+  // Ensure single data points are rendered as a visible line across the chart
+  const displayData = React.useMemo(() => {
+    if (!data || data.length === 0) return [];
+    if (data.length === 1) {
+      const pt = data[0];
+      return [
+        { ...pt, time: "Initial" },
+        { ...pt, time: pt.time || "Now" }
+      ];
+    }
+    return data;
+  }, [data]);
+
+  const latestPoint = data && data.length > 0 ? data[data.length - 1] : null;
 
   return (
     <div
       style={{ backgroundColor: bgColor }}
-      className="border border-slate-300 dark:border-slate-800 rounded shadow-sm overflow-hidden flex flex-col h-[275px] transition-colors"
+      className="border border-slate-300 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden flex flex-col min-h-[305px] h-[315px] sm:h-[325px] transition-colors"
     >
       {/* Top Header Bar (With 4 Action Icons + Direct CSV & Excel Export Buttons) */}
-      <div className="bg-[#2a75a0] dark:bg-slate-800 text-white px-3 py-1.5 flex items-center justify-between text-xs font-semibold select-none shrink-0">
-        <span className="truncate pr-2">{headerTitle}</span>
+      <div className="bg-[#2a75a0] dark:bg-slate-800 text-white px-3 py-2 flex items-center justify-between text-xs font-semibold select-none shrink-0">
+        <span className="truncate pr-2 font-bold tracking-tight">{headerTitle}</span>
         <div className="flex items-center gap-1.5 text-white/90 shrink-0">
           {/* Direct CSV & Excel Export Options for this sensor graph */}
-          <div className="flex items-center bg-black/25 dark:bg-black/40 rounded px-1 py-0.5 text-[10px] font-mono border border-white/20 shadow-inner">
+          <div className="flex items-center bg-black/25 dark:bg-black/40 rounded px-1.5 py-0.5 text-[10px] font-mono border border-white/20 shadow-inner">
             <button
               type="button"
               onClick={handleExportCsv}
@@ -212,7 +248,7 @@ export function SingleFieldChart({
               <FileText className="w-2.5 h-2.5" />
               <span>CSV</span>
             </button>
-            <span className="text-white/30">|</span>
+            <span className="text-white/30 px-0.5">|</span>
             <button
               type="button"
               onClick={handleExportExcel}
@@ -257,24 +293,83 @@ export function SingleFieldChart({
         </div>
       </div>
 
-      {/* Sub Title Strip */}
-      <div className="px-3 pt-1 text-center shrink-0">
-        <span className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+      {/* Sub Title Strip with Real-time Latest Reading Value */}
+      <div className="px-3 py-1.5 flex items-center justify-between text-xs shrink-0 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
+        <span className="text-[11px] text-slate-600 dark:text-slate-400 font-medium truncate max-w-[50%]">
           {channel.name || `Channel ${channel.channel_number || channel.id}`}
         </span>
+        {latestPoint ? (
+          <div className="flex items-center gap-1.5 font-mono">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <span className="text-slate-500 dark:text-slate-400 text-[10px]">Latest:</span>
+            <span className="font-bold text-slate-900 dark:text-white bg-slate-200/80 dark:bg-slate-800 px-2 py-0.5 rounded text-xs border border-slate-300/60 dark:border-slate-700">
+              {latestPoint.value} {field.unit || ""}
+            </span>
+          </div>
+        ) : (
+          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            Waiting for data
+          </span>
+        )}
       </div>
 
       {/* Main Chart Body */}
-      <div className="flex-1 w-full px-1.5 pb-1 relative min-h-0">
+      <div className="flex-1 w-full px-2 pt-1 pb-1 relative min-h-0">
+        {/* Friendly Empty State Overlay when no telemetry exists */}
+        {data.length === 0 && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/70 dark:bg-slate-900/75 backdrop-blur-[0.5px] pointer-events-none z-10 p-4 text-center">
+            <div className="w-9 h-9 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-1.5 animate-pulse shadow-sm">
+              <Activity className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+              Awaiting {fieldLabel} Telemetry
+            </span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 max-w-[240px] mt-0.5 leading-relaxed">
+              Stream data via Write API Key or Code Generator to start live plotting.
+            </span>
+          </div>
+        )}
+
         <ResponsiveContainer width="100%" height="100%">
           {chartOptions.chartType === "bar" || chartOptions.chartType === "column" ? (
             <BarChart
-              data={data.length > 0 ? data : [{ time: "Now", value: 0 }]}
-              margin={{ top: 6, right: 12, left: -15, bottom: 6 }}
+              data={displayData.length > 0 ? displayData : [{ time: "Start", value: 0 }, { time: "Now", value: 0 }]}
+              margin={{ top: 12, right: 20, left: 24, bottom: 26 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#1e293b" : "#e2e8f0"} vertical={false} />
-              <XAxis dataKey="time" stroke={isDark ? "#64748b" : "#94a3b8"} fontSize={9} tickLine={false} />
-              <YAxis stroke={isDark ? "#64748b" : "#94a3b8"} fontSize={9} tickLine={false} domain={yDomain} />
+              <XAxis
+                dataKey="time"
+                stroke={isDark ? "#64748b" : "#94a3b8"}
+                fontSize={10}
+                tickLine={false}
+                label={{
+                  value: chartOptions.xAxisLabel || "Date",
+                  position: "insideBottom",
+                  offset: -2,
+                  fill: isDark ? "#94a3b8" : "#64748b",
+                  fontSize: 10,
+                  fontWeight: 600,
+                  style: { textAnchor: "middle" }
+                }}
+              />
+              <YAxis
+                width={40}
+                stroke={isDark ? "#64748b" : "#94a3b8"}
+                fontSize={10}
+                tickLine={false}
+                domain={yDomain}
+                label={{
+                  value: fieldLabel,
+                  angle: -90,
+                  position: "insideLeft",
+                  offset: -10,
+                  fill: isDark ? "#94a3b8" : "#64748b",
+                  fontSize: 10,
+                  fontWeight: 600,
+                  style: { textAnchor: "middle" }
+                }}
+              />
               <Tooltip
                 contentStyle={{
                   backgroundColor: isDark ? "#0f172a" : "#ffffff",
@@ -287,12 +382,42 @@ export function SingleFieldChart({
             </BarChart>
           ) : chartOptions.chartType === "area" ? (
             <AreaChart
-              data={data.length > 0 ? data : [{ time: "Now", value: 0 }]}
-              margin={{ top: 6, right: 12, left: -15, bottom: 6 }}
+              data={displayData.length > 0 ? displayData : [{ time: "Start", value: 0 }, { time: "Now", value: 0 }]}
+              margin={{ top: 12, right: 20, left: 24, bottom: 26 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#1e293b" : "#e2e8f0"} vertical={false} />
-              <XAxis dataKey="time" stroke={isDark ? "#64748b" : "#94a3b8"} fontSize={9} tickLine={false} />
-              <YAxis stroke={isDark ? "#64748b" : "#94a3b8"} fontSize={9} tickLine={false} domain={yDomain} />
+              <XAxis
+                dataKey="time"
+                stroke={isDark ? "#64748b" : "#94a3b8"}
+                fontSize={10}
+                tickLine={false}
+                label={{
+                  value: chartOptions.xAxisLabel || "Date",
+                  position: "insideBottom",
+                  offset: -2,
+                  fill: isDark ? "#94a3b8" : "#64748b",
+                  fontSize: 10,
+                  fontWeight: 600,
+                  style: { textAnchor: "middle" }
+                }}
+              />
+              <YAxis
+                width={40}
+                stroke={isDark ? "#64748b" : "#94a3b8"}
+                fontSize={10}
+                tickLine={false}
+                domain={yDomain}
+                label={{
+                  value: fieldLabel,
+                  angle: -90,
+                  position: "insideLeft",
+                  offset: -10,
+                  fill: isDark ? "#94a3b8" : "#64748b",
+                  fontSize: 10,
+                  fontWeight: 600,
+                  style: { textAnchor: "middle" }
+                }}
+              />
               <Tooltip
                 contentStyle={{
                   backgroundColor: isDark ? "#0f172a" : "#ffffff",
@@ -305,8 +430,8 @@ export function SingleFieldChart({
             </AreaChart>
           ) : (
             <LineChart
-              data={data.length > 0 ? data : [{ time: "Now", value: 0 }]}
-              margin={{ top: 6, right: 12, left: -15, bottom: 6 }}
+              data={displayData.length > 0 ? displayData : [{ time: "Start", value: 0 }, { time: "Now", value: 0 }]}
+              margin={{ top: 12, right: 20, left: 24, bottom: 26 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#1e293b" : "#e2e8f0"} vertical={false} />
               <XAxis
@@ -317,12 +442,15 @@ export function SingleFieldChart({
                 label={{
                   value: chartOptions.xAxisLabel || "Date",
                   position: "insideBottom",
-                  offset: -10,
+                  offset: -2,
                   fill: isDark ? "#94a3b8" : "#64748b",
-                  fontSize: 11
+                  fontSize: 10,
+                  fontWeight: 600,
+                  style: { textAnchor: "middle" }
                 }}
               />
               <YAxis
+                width={40}
                 stroke={isDark ? "#64748b" : "#94a3b8"}
                 fontSize={10}
                 tickLine={false}
@@ -331,9 +459,11 @@ export function SingleFieldChart({
                   value: fieldLabel,
                   angle: -90,
                   position: "insideLeft",
-                  offset: 15,
+                  offset: -10,
                   fill: isDark ? "#94a3b8" : "#64748b",
-                  fontSize: 11
+                  fontSize: 10,
+                  fontWeight: 600,
+                  style: { textAnchor: "middle" }
                 }}
               />
               <Tooltip
@@ -350,8 +480,8 @@ export function SingleFieldChart({
                 type={chartOptions.chartType === "step" ? "stepAfter" : chartOptions.chartType === "spline" ? "natural" : "monotone"}
                 dataKey="value"
                 stroke={strokeColor}
-                strokeWidth={2}
-                dot={{ r: 2.5, fill: strokeColor }}
+                strokeWidth={2.2}
+                dot={{ r: 3, fill: strokeColor }}
                 activeDot={{ r: 5 }}
                 isAnimationActive={true}
               />
