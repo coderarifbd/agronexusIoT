@@ -21,6 +21,7 @@ export function AddWidgetModal({ isOpen, onClose, channel, channelId, fields = [
     { id: 1, from: "90", to: "100", color: "#d62020" }
   ]);
 
+  const [autoScale, setAutoScale] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -36,6 +37,7 @@ export function AddWidgetModal({ isOpen, onClose, channel, channelId, fields = [
       const cfg = editWidget.config || {};
       setMinVal(cfg.min !== undefined ? String(cfg.min) : "0");
       setMaxVal(cfg.max !== undefined ? String(cfg.max) : "100");
+      setAutoScale(cfg.autoScale !== undefined ? Boolean(cfg.autoScale) : true);
       setDisplayValue(cfg.displayValue !== undefined ? cfg.displayValue : true);
       setUnits(cfg.units || "");
       setTickInterval(cfg.tickInterval !== undefined ? String(cfg.tickInterval) : "10");
@@ -51,6 +53,7 @@ export function AddWidgetModal({ isOpen, onClose, channel, channelId, fields = [
       setFieldKey(fields[0]?.field_key || "field1");
       setMinVal("0");
       setMaxVal("100");
+      setAutoScale(true);
       setDisplayValue(true);
       setUnits("");
       setTickInterval("10");
@@ -96,6 +99,7 @@ export function AddWidgetModal({ isOpen, onClose, channel, channelId, fields = [
       const configObj = {
         min: Number(minVal) || 0,
         max: Number(maxVal) || 100,
+        autoScale: Boolean(autoScale),
         displayValue: Boolean(displayValue),
         units: units || "",
         tickInterval: Number(tickInterval) || 10,
@@ -370,6 +374,26 @@ export function AddWidgetModal({ isOpen, onClose, channel, channelId, fields = [
                 />
               </div>
             </div>
+
+            {/* 4b. Auto Scale Range (Gauge only) */}
+            {selectedWidget === "gauge" && (
+              <div className="grid grid-cols-12 gap-2 items-center">
+                <label className="col-span-3 text-right font-medium text-slate-700 dark:text-slate-300">
+                  Auto Scale
+                </label>
+                <div className="col-span-9 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={autoScale}
+                    onChange={(e) => setAutoScale(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#137f3a] focus:ring-0 cursor-pointer"
+                  />
+                  <span className="text-[11px] text-slate-500">
+                    Auto-scale dial to sensor readings (e.g. 0-100, 0-1000, 0-2000)
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* 5. Display Value */}
             <div className="grid grid-cols-12 gap-2 items-center">

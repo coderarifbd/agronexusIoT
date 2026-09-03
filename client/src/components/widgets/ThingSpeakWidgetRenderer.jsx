@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useSocket } from "../../context/SocketContext";
 import { ExternalLink, MessageSquare, Edit3, X } from "lucide-react";
 
@@ -55,26 +55,95 @@ export function ThingSpeakWidgetRenderer({ widget, channel, currentValues = {}, 
     ? JSON.parse(widget.config || "{}")
     : (widget.config || (widget.config_json ? (typeof widget.config_json === "string" ? JSON.parse(widget.config_json) : widget.config_json) : {}));
 
-  const min = config.min !== undefined ? Number(config.min) : 0;
-  const max = config.max !== undefined ? Number(config.max) : 100;
+  const userMin = config.min !== undefined && config.min !== "" ? Number(config.min) : 0;
+  const userMax = config.max !== undefined && config.max !== "" ? Number(config.max) : 100;
+  const autoScale = config.autoScale !== undefined ? Boolean(config.autoScale) : true;
   const unit = config.units || config.unit || "";
   const displayValue = config.displayValue !== undefined ? config.displayValue : true;
-  const tickInterval = Number(config.tickInterval) || 10;
-  const ranges = Array.isArray(config.ranges) && config.ranges.length > 0
+
+  // Smart Dynamic Gauge Scale (automatically adapts dial from 0-100 to 0-1000, 0-2000, etc.)
+  const { min, max, span, ticks } = useMemo(() => {
+    let targetMin = userMin;
+    let targetMax = userMax;
+
+    // When auto-scaling is enabled (default) or when sensor reading exceeds configured max or is below min:
+    if (autoScale || num > targetMax || num < targetMin) {
+      const absVal = Math.abs(num);
+
+      // Determine standard adaptive tier based on the incoming sensor value:
+      // 0-100 -> dial max 100
+      // 101-250 -> dial max 250
+      // 251-500 -> dial max 500
+      // 501-1000 -> dial max 1000
+      // 1001-2000 -> dial max 2000
+      // 2001-3000 -> dial max 3000
+      // 3001-5000 -> dial max 5000
+      // 5001-10000 -> dial max 10000
+      let dynamicMax = 100;
+      if (absVal <= 100) dynamicMax = 100;
+      else if (absVal <= 250) dynamicMax = 250;
+      else if (absVal <= 500) dynamicMax = 500;
+      else if (absVal <= 1000) dynamicMax = 1000;
+      else if (absVal <= 2000) dynamicMax = 2000;
+      else if (absVal <= 3000) dynamicMax = 3000;
+      else if (absVal <= 5000) dynamicMax = 5000;
+      else if (absVal <= 10000) dynamicMax = 10000;
+      else {
+        const exp = Math.floor(Math.log10(absVal));
+        const base = Math.pow(10, exp);
+        dynamicMax = Math.ceil(absVal / base) * base;
+      }
+
+      // If user explicitly configured a higher max, preserve user's setting, otherwise adapt to dynamicMax
+      targetMax = Math.max(userMax, dynamicMax);
+
+      if (num < 0 && num < targetMin) {
+        targetMin = Math.floor(num / 10) * 10;
+      }
+    }
+
+    const calculatedSpan = targetMax - targetMin > 0 ? targetMax - targetMin : 100;
+
+    // Calculate clean step to generate ~10 readable tick markers
+    let step = calculatedSpan / 10;
+    if (step >= 100) {
+      step = Math.round(step / 50) * 50;
+    } else if (step >= 10) {
+      step = Math.round(step / 5) * 5;
+    }
+    if (step <= 0) step = 10;
+
+    const tickList = [];
+    for (let v = targetMin; v <= targetMax; v += step) {
+      tickList.push(Math.round(v * 10) / 10);
+    }
+    if (tickList[tickList.length - 1] < targetMax) {
+      tickList.push(targetMax);
+    }
+
+    return {
+      min: targetMin,
+      max: targetMax,
+      span: calculatedSpan,
+      ticks: tickList
+    };
+  }, [num, userMin, userMax, autoScale]);
+
+  const rawRanges = Array.isArray(config.ranges) && config.ranges.length > 0
     ? config.ranges
     : [{ from: 90, to: 100, color: "#d62020" }];
 
-  const span = (max - min) > 0 ? (max - min) : 100;
-
-  // Generate tick markers
-  const ticks = [];
-  const step = tickInterval > 0 ? tickInterval : Math.max(1, Math.round(span / 10));
-  for (let val = min; val <= max; val += step) {
-    ticks.push(val);
-  }
-  if (ticks[ticks.length - 1] !== max) {
-    ticks.push(max);
-  }
+  // Proportional scaling for warning/danger sector if max changes from default 100
+  const ranges = rawRanges.map((r) => {
+    if (r.from === 90 && r.to === 100 && max !== 100) {
+      return {
+        ...r,
+        from: Math.round(min + span * 0.9),
+        to: max
+      };
+    }
+    return r;
+  });
 
   // Render Gauge (Exact clone of media_1788288005556.png)
   function renderGauge() {
@@ -192,11 +261,11 @@ export function ThingSpeakWidgetRenderer({ widget, channel, currentValues = {}, 
                   <text
                     x={pText.x}
                     y={pText.y + 3.5}
-                    fontSize="9.5"
+                    fontSize={max >= 1000 ? "7.5" : "9.5"}
                     fill="#1e293b"
                     textAnchor="middle"
                     fontFamily="sans-serif"
-                    fontWeight="500"
+                    fontWeight={max >= 1000 ? "600" : "500"}
                   >
                     {t}
                   </text>
