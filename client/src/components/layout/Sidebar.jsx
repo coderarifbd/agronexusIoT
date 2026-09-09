@@ -7,6 +7,7 @@ import {
   UserCheck,
   Terminal,
   CircuitBoard,
+  Globe,
   LogOut
 } from "lucide-react";
 
@@ -15,6 +16,7 @@ export function Sidebar({ currentTab, setCurrentTab }) {
 
   const navigation = [
     { id: "dashboard", name: "Live Dashboard", icon: LayoutDashboard },
+    { id: "landing", name: "Landing / 1st Page", icon: Globe },
     { id: "channels", name: "My Channels", icon: Radio },
     { id: "devices", name: "IoT Devices Fleet", icon: Cpu },
     { id: "codegen", name: "Code Generator", icon: Terminal, badge: "NEW" },
@@ -60,10 +62,10 @@ export function Sidebar({ currentTab, setCurrentTab }) {
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 border border-emerald-500/40 flex items-center justify-center text-xs font-bold text-emerald-700 dark:text-emerald-400">
-              {user?.name?.[0] || "T"}
+              {user?.name?.[0] || "A"}
             </div>
             <div className="overflow-hidden">
-              <div className="text-xs font-semibold text-slate-800 dark:text-white truncate">{user?.name || "Tanni"}</div>
+              <div className="text-xs font-semibold text-slate-800 dark:text-white truncate">{user?.name || "Anami"}</div>
               <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{user?.user_id_code || "ANAMI-001"}</div>
             </div>
           </div>

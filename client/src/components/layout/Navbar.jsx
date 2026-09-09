@@ -24,7 +24,8 @@ import {
   Folder,
   ArrowLeft,
   Terminal,
-  CircuitBoard
+  CircuitBoard,
+  Globe
 } from "lucide-react";
 
 export function Navbar({ onOpenAI, onOpenAlerts, onOpenActivity, onOpenSimulator, currentTab, setCurrentTab, onBack, canGoBack }) {
@@ -61,6 +62,7 @@ export function Navbar({ onOpenAI, onOpenAlerts, onOpenActivity, onOpenSimulator
 
   const navItems = [
     { id: "dashboard", name: "Live Dashboard", icon: LayoutDashboard },
+    { id: "landing", name: "Landing / 1st Page", icon: Globe },
     { id: "channels", name: "My Channels", icon: Radio },
     { id: "devices", name: "IoT Devices Fleet", icon: Cpu },
     { id: "codegen", name: "Code Generator", icon: Terminal },
@@ -110,7 +112,7 @@ export function Navbar({ onOpenAI, onOpenAlerts, onOpenActivity, onOpenSimulator
             <div className="hidden xs:flex text-[10px] text-slate-500 dark:text-slate-400 font-mono items-center gap-1">
               <span>{user?.user_id_code || "ANAMI-001"}</span>
               <span className="text-slate-300 dark:text-slate-600">•</span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-semibold truncate max-w-[100px]">{user?.name || "Tanni"}</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold truncate max-w-[100px]">{user?.name || "Anami"}</span>
             </div>
           </div>
         </div>
@@ -183,6 +185,16 @@ export function Navbar({ onOpenAI, onOpenAlerts, onOpenActivity, onOpenSimulator
             <Zap className="w-3.5 h-3.5" />
           </button>
         </div>
+
+        {/* View Landing / 1st Page Button */}
+        <button
+          onClick={() => setCurrentTab && setCurrentTab("landing")}
+          title="View Website 1st Page (Hero & Overview)"
+          className="hidden md:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-700/60 text-emerald-700 dark:text-emerald-300 text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-all shadow-sm cursor-pointer"
+        >
+          <Globe className="w-3.5 h-3.5" />
+          <span>1st Page</span>
+        </button>
 
         {/* Theme Switcher Toggle */}
         <button

@@ -23,12 +23,59 @@ async function generateNextUserId() {
   return `ANAMI-${nextNum}`;
 }
 
+// Check if user exists by identifier
+router.post("/check-user", async (req, res) => {
+  const { identifier } = req.body;
+  if (!identifier || !identifier.trim()) {
+    return res.json({ exists: false });
+  }
+
+  try {
+    const user = await db.get(`
+      SELECT id, username, name, email, user_id_code FROM users 
+      WHERE LOWER(email) = LOWER($1) 
+         OR LOWER(username) = LOWER($1) 
+         OR LOWER(user_id_code) = LOWER($1)
+    `, [identifier.trim()]);
+
+    if (user) {
+      return res.json({
+        exists: true,
+        user: {
+          username: user.username,
+          name: user.name,
+          email: user.email,
+          user_id_code: user.user_id_code
+        }
+      });
+    }
+
+    return res.json({ exists: false });
+  } catch (err) {
+    console.error("Check user error:", err);
+    return res.status(500).json({ error: "Failed to verify account" });
+  }
+});
+
 // Register
 router.post("/register", rateLimiter(10, 60000), async (req, res) => {
-  const { name, username, email, password, passkey } = req.body;
+  let { name, username, email, password, passkey } = req.body;
 
-  if (!name || !username || !email || !password) {
-    return res.status(400).json({ error: "All fields are required (Name, Username, Email, Password)." });
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and Password are required." });
+  }
+
+  if (!username || !username.trim()) {
+    const base = email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "").slice(0, 20);
+    username = base || `user_${Date.now().toString().slice(-4)}`;
+    const existingUser = await db.get("SELECT id FROM users WHERE username = $1", [username]);
+    if (existingUser) {
+      username = `${username}_${Math.floor(100 + Math.random() * 900)}`;
+    }
+  }
+
+  if (!name || !name.trim()) {
+    name = username;
   }
 
   const existing = await db.get("SELECT id FROM users WHERE username = $1 OR email = $2", [username, email]);
@@ -72,7 +119,9 @@ router.post("/login", rateLimiter(20, 60000), async (req, res) => {
 
   const user = await db.get(`
     SELECT * FROM users 
-    WHERE email = $1 OR username = $1 OR user_id_code = $1
+    WHERE LOWER(email) = LOWER($1) 
+       OR LOWER(username) = LOWER($1) 
+       OR LOWER(user_id_code) = LOWER($1)
   `, [identifier]);
 
   const ip = req.ip || req.headers["x-forwarded-for"] || "127.0.0.1";

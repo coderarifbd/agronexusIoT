@@ -18,6 +18,7 @@ import { ProfileView } from "./components/profile/ProfileView";
 import { AIAssistantModal } from "./components/ai/AIAssistantModal";
 import { CodeGeneratorView } from "./components/codegen/CodeGeneratorView";
 import { CircuitDesignerView } from "./components/circuit/CircuitDesignerView";
+import { LandingPage } from "./components/landing/LandingPage";
 
 import { AlertTriangle, X, RefreshCw } from "lucide-react";
 
@@ -73,6 +74,8 @@ function MainApp() {
   const [showAI, setShowAI] = useState(false);
   const [showAlerts, setShowAlerts] = useState(false);
   const [showActivity, setShowActivity] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState("existing");
 
   function navigateTo(tab) {
     if (tab !== currentTab) {
@@ -117,7 +120,40 @@ function MainApp() {
   }
 
   if (!user) {
-    return <LoginModal />;
+    return (
+      <>
+        <LandingPage
+          onGetStarted={() => {
+            setAuthModalMode("new");
+            setShowAuthModal(true);
+          }}
+          onLogin={() => {
+            setAuthModalMode("existing");
+            setShowAuthModal(true);
+          }}
+          onNavigateToDashboard={() => {
+            setAuthModalMode("existing");
+            setShowAuthModal(true);
+          }}
+        />
+        {showAuthModal && (
+          <LoginModal
+            onClose={() => setShowAuthModal(false)}
+            initialUserType={authModalMode}
+          />
+        )}
+      </>
+    );
+  }
+
+  if (currentTab === "landing") {
+    return (
+      <LandingPage
+        onGetStarted={() => navigateTo("dashboard")}
+        onLogin={() => navigateTo("dashboard")}
+        onNavigateToDashboard={() => navigateTo("dashboard")}
+      />
+    );
   }
 
   return (

@@ -287,8 +287,8 @@ async function seedDefaultData(client) {
   console.log("?? Seeding initial AgroNexus IoT Cloud Database with ANAMI-001...");
 
   const userId = uuidv4();
-  const passwordHash = bcrypt.hashSync("password123", 10);
-  const passkeyHash = bcrypt.hashSync("passkey123", 10);
+  const passwordHash = bcrypt.hashSync("2341", 10);
+  const passkeyHash = bcrypt.hashSync("2341", 10);
 
   // 1. User
   await client.query(`
@@ -297,9 +297,9 @@ async function seedDefaultData(client) {
   `, [
     userId,
     "ANAMI-001",
-    "Tanni",
-    "tanni",
-    "tanni@agronexus.iot",
+    "Anami",
+    "Anami",
+    "anami@agronexus.iot",
     passwordHash,
     passkeyHash,
     "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
