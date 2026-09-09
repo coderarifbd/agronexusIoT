@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { SocketProvider, useSocket } from "./context/SocketContext";
@@ -76,11 +76,29 @@ function MainApp() {
   const [showActivity, setShowActivity] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalMode, setAuthModalMode] = useState("existing");
+  const [pendingTab, setPendingTab] = useState(null);
+
+  useEffect(() => {
+    if (user && pendingTab) {
+      navigateTo(pendingTab);
+      setPendingTab(null);
+    }
+  }, [user, pendingTab]);
 
   function navigateTo(tab) {
     if (tab !== currentTab) {
       setTabHistory(prev => [...prev, currentTab]);
       setCurrentTab(tab);
+    }
+  }
+
+  function handleNavigateFromLanding(tabId) {
+    if (user) {
+      navigateTo(tabId);
+    } else {
+      setPendingTab(tabId);
+      setAuthModalMode("existing");
+      setShowAuthModal(true);
     }
   }
 
@@ -131,10 +149,8 @@ function MainApp() {
             setAuthModalMode("existing");
             setShowAuthModal(true);
           }}
-          onNavigateToDashboard={() => {
-            setAuthModalMode("existing");
-            setShowAuthModal(true);
-          }}
+          onNavigateToDashboard={() => handleNavigateFromLanding("dashboard")}
+          onNavigateTab={handleNavigateFromLanding}
         />
         {showAuthModal && (
           <LoginModal
@@ -152,6 +168,7 @@ function MainApp() {
         onGetStarted={() => navigateTo("dashboard")}
         onLogin={() => navigateTo("dashboard")}
         onNavigateToDashboard={() => navigateTo("dashboard")}
+        onNavigateTab={(tabId) => navigateTo(tabId)}
       />
     );
   }

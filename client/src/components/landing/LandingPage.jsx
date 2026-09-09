@@ -88,17 +88,31 @@ function CountUp({ end, duration = 1800, prefix = "", suffix = "" }) {
   );
 }
 
-export function LandingPage({ onGetStarted, onLogin, onNavigateToDashboard }) {
+export function LandingPage({ onGetStarted, onLogin, onNavigateToDashboard, onNavigateTab }) {
   const { user } = useAuth();
   const { theme, toggleTheme, isDark } = useTheme();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  function handleDashboardClick() {
-    if (user && onNavigateToDashboard) {
+  const navItems = [
+    { label: "Dashboard", tab: "dashboard" },
+    { label: "My channel", tab: "channels" },
+    { label: "Cirkit Design", tab: "circuit" },
+    { label: "Code Generation", tab: "codegen" },
+    { label: "Security & profile", tab: "profile" }
+  ];
+
+  function handleMenuClick(tabId) {
+    if (onNavigateTab) {
+      onNavigateTab(tabId);
+    } else if (user && onNavigateToDashboard) {
       onNavigateToDashboard();
     } else if (onLogin) {
       onLogin();
     }
+  }
+
+  function handleDashboardClick() {
+    handleMenuClick("dashboard");
   }
 
   return (
@@ -122,50 +136,17 @@ export function LandingPage({ onGetStarted, onLogin, onNavigateToDashboard }) {
             </div>
           </div>
 
-          {/* Center: Navigation links matching reference image */}
-          <nav className="hidden md:flex items-center gap-7 text-xs sm:text-sm font-medium text-emerald-100/80">
-            <button
-              onClick={handleDashboardClick}
-              className="hover:text-white transition-colors cursor-pointer"
-            >
-              Dashboard
-            </button>
-            <button
-              onClick={() => {
-                const el = document.getElementById("features");
-                if (el) el.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="hover:text-white transition-colors cursor-pointer"
-            >
-              TwelveLabs
-            </button>
-            <button
-              onClick={() => {
-                const el = document.getElementById("features");
-                if (el) el.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="hover:text-white transition-colors cursor-pointer"
-            >
-              Cloudinary
-            </button>
-            <button
-              onClick={() => {
-                const el = document.getElementById("disease-analysis");
-                if (el) el.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="hover:text-white transition-colors cursor-pointer"
-            >
-              Disease Analysis
-            </button>
-            <button
-              onClick={() => {
-                const el = document.getElementById("irrigator");
-                if (el) el.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="hover:text-white transition-colors cursor-pointer"
-            >
-              Irrigator
-            </button>
+          {/* Center: Navigation links requested by user */}
+          <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-xs sm:text-sm font-medium text-emerald-100/90">
+            {navItems.map((item) => (
+              <button
+                key={item.tab}
+                onClick={() => handleMenuClick(item.tab)}
+                className="hover:text-white transition-colors cursor-pointer"
+              >
+                {item.label}
+              </button>
+            ))}
           </nav>
 
           {/* Right: Sign up / Dashboard Action & Theme Toggle */}
@@ -208,45 +189,18 @@ export function LandingPage({ onGetStarted, onLogin, onNavigateToDashboard }) {
         {/* Mobile Dropdown */}
         {mobileNavOpen && (
           <div className="md:hidden mt-3 pt-3 border-t border-emerald-900/60 flex flex-col gap-3 text-sm text-emerald-100">
-            <button onClick={handleDashboardClick} className="text-left py-1 hover:text-white">
-              Dashboard
-            </button>
-            <button
-              onClick={() => {
-                setMobileNavOpen(false);
-                document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="text-left py-1 hover:text-white"
-            >
-              TwelveLabs
-            </button>
-            <button
-              onClick={() => {
-                setMobileNavOpen(false);
-                document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="text-left py-1 hover:text-white"
-            >
-              Cloudinary
-            </button>
-            <button
-              onClick={() => {
-                setMobileNavOpen(false);
-                document.getElementById("disease-analysis")?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="text-left py-1 hover:text-white"
-            >
-              Disease Analysis
-            </button>
-            <button
-              onClick={() => {
-                setMobileNavOpen(false);
-                document.getElementById("irrigator")?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="text-left py-1 hover:text-white"
-            >
-              Irrigator
-            </button>
+            {navItems.map((item) => (
+              <button
+                key={item.tab}
+                onClick={() => {
+                  setMobileNavOpen(false);
+                  handleMenuClick(item.tab);
+                }}
+                className="text-left py-1.5 hover:text-white transition-colors"
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
         )}
       </header>
