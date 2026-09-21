@@ -19,47 +19,6 @@ import { ExternalLink, MessageSquare, Edit3, X, RefreshCw, FileText, FileSpreads
 import * as XLSX from "xlsx";
 import { EditChartOptionsModal } from "./EditChartOptionsModal";
 
-export function SingleFieldChart({
-  channel,
-  field,
-  fieldIndex,
-  onDelete
-}) {
-  const { isDark } = useTheme();
-  const { latestTelemetry = {} } = useSocket();
-
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-
-  // Chart Custom Options (Configurable via Edit Modal)
-  const [chartOptions, setChartOptions] = useState({
-    title: "",
-    xAxisLabel: "Date",
-    yAxisLabel: field?.name || `Field Label ${fieldIndex + 1}`,
-    color: field?.color || "#d62020",
-    background: "#ffffff",
-    chartType: "line",
-    dynamic: true,
-    days: "",
-    results: 60,
-    timescale: "",
-    average: "",
-    median: "",
-    sum: "",
-    rounding: "",
-    dataMin: "",
-    dataMax: "",
-    yAxisMin: null,
-    yAxisMax: null
-  });
-
-  useEffect(() => {
-    if (channel?.id) {
-      loadFieldData();
-    }
-  }, [channel?.id, field?.field_key, chartOptions.results]);
-
 function extractFieldValue(obj, field, fieldIndex, channel) {
   if (!obj || typeof obj !== "object") return undefined;
 
@@ -106,6 +65,47 @@ function extractFieldValue(obj, field, fieldIndex, channel) {
 
   return undefined;
 }
+
+export function SingleFieldChart({
+  channel,
+  field,
+  fieldIndex,
+  onDelete
+}) {
+  const { isDark } = useTheme();
+  const { latestTelemetry = {} } = useSocket();
+
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  // Chart Custom Options (Configurable via Edit Modal)
+  const [chartOptions, setChartOptions] = useState({
+    title: "",
+    xAxisLabel: "Date",
+    yAxisLabel: field?.name || `Field Label ${fieldIndex + 1}`,
+    color: field?.color || "#d62020",
+    background: "#ffffff",
+    chartType: "line",
+    dynamic: true,
+    days: "",
+    results: 60,
+    timescale: "",
+    average: "",
+    median: "",
+    sum: "",
+    rounding: "",
+    dataMin: "",
+    dataMax: "",
+    yAxisMin: null,
+    yAxisMax: null
+  });
+
+  useEffect(() => {
+    if (channel?.id) {
+      loadFieldData();
+    }
+  }, [channel?.id, field?.field_key, chartOptions.results]);
 
   // Append new incoming WebSocket telemetry live
   useEffect(() => {
