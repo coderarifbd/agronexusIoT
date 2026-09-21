@@ -257,7 +257,7 @@ router.post("/data", async (req, res) => {
 });
 
 // 4. ThingSpeak Read Feed: GET /channels/:id/feeds.json
-router.get("/channels/:id/feeds.json", async (req, res) => {
+router.get(["/channels/:id/feeds.json", "/channel/:id/feeds.json"], async (req, res) => {
   const channelId = req.params.id;
   const { api_key, results = 50 } = req.query;
 
@@ -333,8 +333,13 @@ router.get("/channels/:id/feeds.json", async (req, res) => {
   });
 });
 
-// 5. ThingSpeak Read Single Field: GET /channels/:id/fields/:fieldNum.json
-router.get("/channels/:id/fields/:fieldNum.json", async (req, res) => {
+// 5. ThingSpeak Read Single Field: GET /channels/:id/fields/:fieldNum.json or /field/:fieldNum.json
+router.get([
+  "/channels/:id/fields/:fieldNum.json",
+  "/channels/:id/field/:fieldNum.json",
+  "/channel/:id/fields/:fieldNum.json",
+  "/channel/:id/field/:fieldNum.json"
+], async (req, res) => {
   const channelId = req.params.id;
   const fieldNum = parseInt(req.params.fieldNum) || 1;
   const { api_key, results = 50 } = req.query;
@@ -390,7 +395,7 @@ router.get("/channels/:id/fields/:fieldNum.json", async (req, res) => {
 });
 
 // 6. ThingSpeak Read Channel Status: GET /channels/:id/status.json
-router.get("/channels/:id/status.json", async (req, res) => {
+router.get(["/channels/:id/status.json", "/channel/:id/status.json"], async (req, res) => {
   const channelId = req.params.id;
   const channel = await db.get(
     "SELECT * FROM channels WHERE id = $1 OR channel_number::text = $1",
