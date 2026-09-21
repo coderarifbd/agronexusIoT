@@ -160,29 +160,18 @@ export function LandingPage({ onGetStarted, onLogin, onNavigateToDashboard, onNa
               {isDark ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4 text-indigo-300" />}
             </button>
 
-            {user ? (
-              <button
-                onClick={handleDashboardClick}
-                className="px-5 py-2 rounded-full bg-[#f5c026] hover:bg-[#e6b31e] text-slate-950 font-bold text-xs sm:text-sm shadow-md transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-              >
-                Open Dashboard
-              </button>
-            ) : (
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <button
-                  onClick={onLogin}
-                  className="px-3.5 py-1.5 rounded-full hover:bg-emerald-950/80 text-emerald-300 hover:text-white font-semibold text-xs sm:text-sm transition-colors cursor-pointer"
-                >
-                  Log In
-                </button>
-                <button
-                  onClick={onGetStarted}
-                  className="px-5 py-2 rounded-full bg-[#f5c026] hover:bg-[#e6b31e] text-slate-950 font-bold text-xs sm:text-sm shadow-md transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-                >
-                  Sign up
-                </button>
-              </div>
-            )}
+            <button
+              onClick={() => {
+                if (user || localStorage.getItem("agx_token")) {
+                  handleDashboardClick();
+                } else {
+                  onGetStarted();
+                }
+              }}
+              className="px-6 py-2 rounded-full bg-[#f5c026] hover:bg-[#e6b31e] text-slate-950 font-bold text-xs sm:text-sm shadow-md transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+            >
+              {user ? "Dashboard" : "Sign up"}
+            </button>
 
             {/* Mobile Menu Button */}
             <button
@@ -261,10 +250,16 @@ export function LandingPage({ onGetStarted, onLogin, onNavigateToDashboard, onNa
             {/* Action Button: [ Get Started ] */}
             <div className="flex flex-wrap items-center gap-4">
               <button
-                onClick={user && onNavigateToDashboard ? onNavigateToDashboard : onGetStarted}
+                onClick={() => {
+                  if (user || localStorage.getItem("agx_token")) {
+                    handleDashboardClick();
+                  } else {
+                    onGetStarted();
+                  }
+                }}
                 className="px-8 py-3.5 rounded-full bg-[#f5c026] hover:bg-[#eab308] text-slate-950 font-extrabold text-sm sm:text-base shadow-xl shadow-amber-500/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0 inline-flex items-center gap-2 cursor-pointer group"
               >
-                <span>{user ? "Open Dashboard" : "Get Started"}</span>
+                <span>{user ? "Open Dashboard" : "Create Account"}</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </button>
             </div>
