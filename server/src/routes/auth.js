@@ -94,46 +94,15 @@ router.post("/register", rateLimiter(10, 60000), async (req, res) => {
     VALUES ($1, $2, $3, $4, $5, $6, $7)
   `, [userId, userIdCode, name, username, email, passwordHash, passkeyHash]);
 
-  // Automatically initialize an isolated private project and starter channel for the new user's dashboard
+  // Automatically initialize a private project container for the new user (NO default channels)
   try {
     const defaultProjectId = uuidv4();
     await db.run(`
       INSERT INTO projects (id, user_id, name, description, icon, color)
       VALUES ($1, $2, $3, $4, $5, $6)
     `, [defaultProjectId, userId, `${name}'s Farm Hub`, "Primary IoT telemetry and automation project", "leaf", "#10B981"]);
-
-    const defaultChannelId = uuidv4();
-    const writeKey = `AGX_${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
-    const readKey = `AGX_${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
-    await db.run(`
-      INSERT INTO channels (id, project_id, name, description, channel_number, api_write_key, api_read_key, is_public)
-      VALUES ($1, $2, $3, $4, 1, $5, $6, 0)
-    `, [defaultChannelId, defaultProjectId, "Field 1 - Soil & Environment", "Default telemetry channel for sensors and actuators", writeKey, readKey]);
-
-    // Create 3 standard sensor fields
-    await db.run(`
-      INSERT INTO channel_fields (id, channel_id, field_key, name, unit, min_value, max_value, field_order, color)
-      VALUES 
-        ($1, $2, 'field1', 'Soil Moisture', '%', 0, 100, 1, '#10B981'),
-        ($3, $2, 'field2', 'Temperature', '°C', -10, 60, 2, '#EF4444'),
-        ($4, $2, 'field3', 'Humidity', '%', 0, 100, 3, '#3B82F6')
-    `, [uuidv4(), defaultChannelId, uuidv4(), uuidv4()]);
-
-    // Create initial ThingSpeak-style widgets on their dashboard
-    await db.run(`
-      INSERT INTO dashboard_widgets (id, channel_id, title, widget_type, field_key, chart_type, config_json, grid_x, grid_y, grid_w, grid_h)
-      VALUES 
-        ($1, $2, 'Soil Moisture Gauge', 'gauge', 'field1', 'gauge', $3, 0, 0, 6, 4),
-        ($4, $2, 'Field 1 Telemetry Chart', 'chart', 'field1', 'line', $5, 6, 0, 6, 4)
-    `, [
-      uuidv4(),
-      defaultChannelId,
-      JSON.stringify({ min: 0, max: 100, autoScale: true, units: "%", displayValue: true }),
-      uuidv4(),
-      JSON.stringify({ title: "Field 1 Telemetry", yAxisLabel: "Moisture (%)" })
-    ]);
   } catch (errInit) {
-    console.error("Notice: Could not seed initial project/channel for user:", errInit.message);
+    console.error("Notice: Could not seed initial project for user:", errInit.message);
   }
 
   const token = jwt.sign({ id: userId, username, userIdCode }, CONFIG.JWT_SECRET, { expiresIn: CONFIG.JWT_EXPIRES_IN });
