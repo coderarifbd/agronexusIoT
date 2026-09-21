@@ -136,8 +136,8 @@ router.get("/update", async (req, res) => {
   }
 });
 
-// 2. ThingSpeak POST /update endpoint
-router.post("/update", async (req, res) => {
+// 2. ThingSpeak POST /update (and root POST /) endpoint
+router.post(["/update", "/"], async (req, res) => {
   let bodyObj = req.body;
 
   // Handle raw string body (JSON string or form-urlencoded string)

@@ -24,6 +24,16 @@
       "destination": "/api/index.js"
     },
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "header",
+          "key": "content-type"
+        }
+      ],
+      "destination": "/api/index.js"
+    },
+    {
       "source": "/((?!.*\\.[\\w]+$).*)",
       "destination": "/index.html"
     }
