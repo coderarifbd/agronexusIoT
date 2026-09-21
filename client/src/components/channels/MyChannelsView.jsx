@@ -209,7 +209,7 @@ export function MyChannelsView({ onNavigateToDashboard, onBack, onNavigateToCode
     arduino: {
       title: "Arduino UNO / Mega (Ethernet/WiFi)",
       desc: "Connect Arduino with W5500 or WiFi Shield to send telemetry data to AgroNexus channel.",
-      code: `// AgroNexus IoT / ThingSpeak Ingest for Arduino
+      code: `// AgroNexus IoT Telemetry Ingest for Arduino
 #include <SPI.h>
 #include <Ethernet.h>
 

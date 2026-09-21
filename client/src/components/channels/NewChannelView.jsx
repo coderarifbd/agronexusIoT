@@ -72,7 +72,7 @@ export function NewChannelView({ onBack, onChannelCreated }) {
       if (!targetProjectId) {
         const newProj = await api.createProject({
           name: "Default IoT Project",
-          description: "Primary Project for ThingSpeak Channels"
+          description: "Primary Project for AgroNexus Channels"
         });
         targetProjectId = newProj.project.id;
       }
