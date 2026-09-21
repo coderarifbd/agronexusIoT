@@ -237,7 +237,7 @@ export function LandingPage({ onGetStarted, onLogin, onNavigateToDashboard, onNa
 
             {/* Headline */}
             <h1 className="text-3xl sm:text-5xl lg:text-[56px] font-black text-white tracking-tight leading-[1.12] mb-6">
-              AgroNexus empowers<br />
+              AgroNexus IoT —<br />
               smarter farming<br />
               decisions.
             </h1>

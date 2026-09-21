@@ -42,16 +42,38 @@
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "AgroNexus IoT",
-      "url": "https://agronexus-iot.vercel.app/",
-      "description": "Smart Agriculture Telemetry, Real-time Sensor Monitoring, Cirkit Designer IDE & Farm Hardware Automation Platform.",
-      "applicationCategory": "BusinessApplication",
-      "operatingSystem": "All",
-      "offers": {
-        "@type": "Offer",
-        "price": "0"
-      }
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://agronexus-iot.vercel.app/#website",
+          "url": "https://agronexus-iot.vercel.app/",
+          "name": "AgroNexus",
+          "alternateName": [
+            "AgroNexus IoT",
+            "Agro Nexus",
+            "AgroNexus Platform",
+            "agronexus-iot"
+          ],
+          "description": "AgroNexus IoT — Enterprise Telemetry, Real-time Sensor Monitoring, Cirkit Designer IDE & Farm Automation Platform."
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://agronexus-iot.vercel.app/#organization",
+          "name": "AgroNexus",
+          "alternateName": "AgroNexus IoT",
+          "url": "https://agronexus-iot.vercel.app/",
+          "logo": "https://agronexus-iot.vercel.app/favicon.ico"
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://agronexus-iot.vercel.app/#software",
+          "name": "AgroNexus IoT",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "All",
+          "url": "https://agronexus-iot.vercel.app/",
+          "description": "Smart Agriculture Telemetry, Real-time Sensor Monitoring, Cirkit Designer IDE & Farm Hardware Automation Platform."
+        }
+      ]
     }
     </script>
   </head>
