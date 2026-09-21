@@ -130,11 +130,11 @@ router.get("/update", async (req, res) => {
   try {
     await processAndStoreTelemetry(channel, null, req.query);
     const countRow = await db.get("SELECT COUNT(*) as count FROM telemetry_data WHERE channel_id = $1", [channel.id]);
-    res.setHeader("Connection", "close");
+
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     return res.status(200).send(String(countRow?.count || 1));
   } catch (err) {
-    res.setHeader("Connection", "close");
+
     return res.status(500).send("0");
   }
 });
@@ -195,12 +195,12 @@ router.post(["/update", "/"], async (req, res) => {
     await processAndStoreTelemetry(channel, null, payload);
     const countRow = await db.get("SELECT COUNT(*) as count FROM telemetry_data WHERE channel_id = $1", [channel.id]);
     const entryId = String(countRow?.count || 1);
-    res.setHeader("Connection", "close");
+
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     return res.status(200).send(entryId);
   } catch (err) {
     console.error("❌ [Update Endpoint Error]:", err);
-    res.setHeader("Connection", "close");
+
     return res.status(500).send("0");
   }
 });
