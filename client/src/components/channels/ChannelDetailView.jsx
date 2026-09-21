@@ -128,7 +128,7 @@ export function ChannelDetailView({ channelId, onBack, onNavigateToCodeGen }) {
     }
   }
 
-  // Live Auto-Refresh Stats (Entries Count & Live Sync)
+  // Live Auto-Refresh Stats & Current Values (Numeric Display & Gauge Sync)
   useEffect(() => {
     const currentId = channelData?.channel?.id;
     if (!currentId) return;
@@ -136,14 +136,31 @@ export function ChannelDetailView({ channelId, onBack, onNavigateToCodeGen }) {
     const statsInterval = setInterval(async () => {
       try {
         const telemetryRes = await api.getTelemetry(currentId, "24h");
-        if (telemetryRes.data) {
+        if (telemetryRes.data && telemetryRes.data.length > 0) {
+          const records = telemetryRes.data;
+          const lastRecord = records[records.length - 1];
+          let latestValues = {};
+          try {
+            latestValues = typeof lastRecord.data_json === "string"
+              ? JSON.parse(lastRecord.data_json)
+              : (lastRecord.data_json || {});
+          } catch {}
+
           setStats((prev) => ({
             ...prev,
-            entries: telemetryRes.data.length
+            entries: records.length
           }));
+
+          setChannelData((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              currentValues: { ...prev.currentValues, ...latestValues }
+            };
+          });
         }
       } catch {}
-    }, 4000);
+    }, 3000);
 
     return () => clearInterval(statsInterval);
   }, [channelData?.channel?.id]);

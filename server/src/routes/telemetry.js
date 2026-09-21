@@ -9,7 +9,58 @@ import { wsHub } from "../services/websocket.js";
 
 const router = express.Router();
 
-// Helper: Common ingestion processor
+// High-speed in-memory cache for channel metadata and fields
+const channelCache = new Map(); // key -> { channel, timestamp }
+const channelFieldsCache = new Map(); // channelId -> { fields, timestamp }
+const channelCountCache = new Map(); // channelId -> count
+const CACHE_TTL = 120 * 1000; // 2 minutes cache
+
+async function getFastChannel(apiKey, channelIdNum) {
+  const cacheKey = String(apiKey || channelIdNum || "");
+  if (cacheKey && channelCache.has(cacheKey)) {
+    const item = channelCache.get(cacheKey);
+    if (Date.now() - item.timestamp < CACHE_TTL) {
+      return item.channel;
+    }
+  }
+
+  let channel = null;
+  if (apiKey) {
+    channel = await db.get("SELECT * FROM channels WHERE api_write_key = $1", [apiKey]);
+  }
+  if (!channel && channelIdNum) {
+    channel = await db.get(
+      "SELECT * FROM channels WHERE channel_number = $1 OR id = $2",
+      [isNaN(Number(channelIdNum)) ? -1 : Number(channelIdNum), String(channelIdNum)]
+    );
+  }
+
+  if (channel) {
+    if (apiKey) channelCache.set(String(apiKey), { channel, timestamp: Date.now() });
+    if (channel.channel_number) channelCache.set(String(channel.channel_number), { channel, timestamp: Date.now() });
+    if (channel.id) channelCache.set(String(channel.id), { channel, timestamp: Date.now() });
+  }
+
+  return channel;
+}
+
+async function getFastChannelFields(channelId) {
+  if (channelFieldsCache.has(channelId)) {
+    const item = channelFieldsCache.get(channelId);
+    if (Date.now() - item.timestamp < CACHE_TTL) {
+      return item.fields;
+    }
+  }
+
+  const fields = await db.all(
+    "SELECT * FROM channel_fields WHERE channel_id = $1 ORDER BY field_order ASC",
+    [channelId]
+  );
+  channelFieldsCache.set(channelId, { fields, timestamp: Date.now() });
+  return fields;
+}
+
+// Helper: Ultra-fast ingestion processor
 async function processAndStoreTelemetry(channel, device, rawData) {
   const sensorData = {};
   // Unpack nested data object if present (e.g. { device_id, api_key, data: { temperature: 28.5, humidity: 70 } })
@@ -24,13 +75,8 @@ async function processAndStoreTelemetry(channel, device, rawData) {
   }
 
   // Smart Field Auto-Mapping:
-  // If payload does not have standard field1, field2... but has custom sensor names (e.g. tds, temp, humidity),
-  // map them to the channel's fields so charts and widgets display them immediately!
   try {
-    const channelFields = await db.all(
-      "SELECT * FROM channel_fields WHERE channel_id = $1 ORDER BY field_order ASC",
-      [channel.id]
-    );
+    const channelFields = await getFastChannelFields(channel.id);
 
     const hasStandardField = Object.keys(sensorData).some((k) => /^field\d+$/i.test(k));
     if (!hasStandardField && channelFields && channelFields.length > 0) {
@@ -78,27 +124,43 @@ async function processAndStoreTelemetry(channel, device, rawData) {
 
   const timestamp = rawData.created_at || rawData.timestamp ? new Date(rawData.created_at || rawData.timestamp) : new Date();
 
-  const insertRes = await db.run(`
+  await db.run(`
     INSERT INTO telemetry_data (channel_id, device_id, data_json, timestamp)
     VALUES ($1, $2, $3, $4)
   `, [channel.id, device?.id || null, JSON.stringify(processedData), timestamp]);
 
-  if (device) {
-    const battery = rawData.battery || rawData.battery_level;
-    const wifi = rawData.wifi_rssi || rawData.rssi;
-    await db.run(`
-      UPDATE devices 
-      SET last_seen = NOW(), status = 'online',
-          battery_level = COALESCE($1, battery_level),
-          wifi_rssi = COALESCE($2, wifi_rssi)
-      WHERE id = $3
-    `, [battery, wifi, device.id]);
+  let entryId = 1;
+  if (channelCountCache.has(channel.id)) {
+    entryId = channelCountCache.get(channel.id) + 1;
+    channelCountCache.set(channel.id, entryId);
+  } else {
+    const countRow = await db.get("SELECT COUNT(*) as count FROM telemetry_data WHERE channel_id = $1", [channel.id]);
+    entryId = (countRow?.count || 1);
+    channelCountCache.set(channel.id, Number(entryId));
   }
 
-  wsHub.broadcastTelemetry(channel.id, processedData, device?.id);
-  await evaluateAutomationRules(channel.id, processedData, device?.id);
+  // Non-blocking background broadcast & device status update (dispatched immediately)
+  setImmediate(async () => {
+    try {
+      if (device) {
+        const battery = rawData.battery || rawData.battery_level;
+        const wifi = rawData.wifi_rssi || rawData.rssi;
+        await db.run(`
+          UPDATE devices 
+          SET last_seen = NOW(), status = 'online',
+              battery_level = COALESCE($1, battery_level),
+              wifi_rssi = COALESCE($2, wifi_rssi)
+          WHERE id = $3
+        `, [battery, wifi, device.id]);
+      }
+      wsHub.broadcastTelemetry(channel.id, processedData, device?.id);
+      await evaluateAutomationRules(channel.id, processedData, device?.id);
+    } catch (bgErr) {
+      console.error("Background telemetry broadcast note:", bgErr.message);
+    }
+  });
 
-  return processedData;
+  return entryId;
 }
 
 // 1. ThingSpeak GET /update endpoint (e.g. GET /update?api_key=KEY&field1=0)
@@ -112,29 +174,17 @@ router.get("/update", async (req, res) => {
 
   const channelIdNum = req.query.channel_id || req.query.channel_number;
 
-  let channel = null;
-  if (apiKey) {
-    channel = await db.get("SELECT * FROM channels WHERE api_write_key = $1", [apiKey]);
-  }
-  if (!channel && channelIdNum) {
-    channel = await db.get(
-      "SELECT * FROM channels WHERE channel_number = $1 OR id = $2",
-      [isNaN(Number(channelIdNum)) ? -1 : Number(channelIdNum), String(channelIdNum)]
-    );
-  }
+  const channel = await getFastChannel(apiKey, channelIdNum);
 
   if (!channel) {
     return res.status(404).send("0");
   }
 
   try {
-    await processAndStoreTelemetry(channel, null, req.query);
-    const countRow = await db.get("SELECT COUNT(*) as count FROM telemetry_data WHERE channel_id = $1", [channel.id]);
-
+    const entryId = await processAndStoreTelemetry(channel, null, req.query);
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    return res.status(200).send(String(countRow?.count || 1));
+    return res.status(200).send(String(entryId));
   } catch (err) {
-
     return res.status(500).send("0");
   }
 });
@@ -173,18 +223,7 @@ router.post(["/update", "/"], async (req, res) => {
 
   const channelIdNum = payload.channel_id || payload.channel_number;
 
-  let channel = null;
-  if (apiKey) {
-    channel = await db.get("SELECT * FROM channels WHERE api_write_key = $1", [apiKey]);
-  }
-
-  // Fallback: If not found by apiKey but channel_id is provided, look up by channel number
-  if (!channel && channelIdNum) {
-    channel = await db.get(
-      "SELECT * FROM channels WHERE channel_number = $1 OR id = $2",
-      [isNaN(Number(channelIdNum)) ? -1 : Number(channelIdNum), String(channelIdNum)]
-    );
-  }
+  const channel = await getFastChannel(apiKey, channelIdNum);
 
   if (!channel) {
     console.warn("⚠️ [Update Endpoint] Channel not found for payload:", payload);
@@ -192,15 +231,11 @@ router.post(["/update", "/"], async (req, res) => {
   }
 
   try {
-    await processAndStoreTelemetry(channel, null, payload);
-    const countRow = await db.get("SELECT COUNT(*) as count FROM telemetry_data WHERE channel_id = $1", [channel.id]);
-    const entryId = String(countRow?.count || 1);
-
+    const entryId = await processAndStoreTelemetry(channel, null, payload);
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    return res.status(200).send(entryId);
+    return res.status(200).send(String(entryId));
   } catch (err) {
     console.error("❌ [Update Endpoint Error]:", err);
-
     return res.status(500).send("0");
   }
 });

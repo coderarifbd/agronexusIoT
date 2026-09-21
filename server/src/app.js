@@ -22,12 +22,14 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(express.text({ type: ["text/*", "text/plain", "application/x-www-form-urlencoded"], limit: "10mb" }));
 
-// Lazy database init helper for serverless
+// Lazy database init helper for serverless (skip redundant DDL on warm serverless lambdas)
 let dbInitialized = false;
 app.use(async (req, res, next) => {
   if (!dbInitialized) {
     try {
-      await initDatabase();
+      if (!process.env.VERCEL) {
+        await initDatabase();
+      }
       dbInitialized = true;
     } catch (e) {
       console.error("DB lazy init error:", e);
