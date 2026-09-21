@@ -128,6 +128,26 @@ export function ChannelDetailView({ channelId, onBack, onNavigateToCodeGen }) {
     }
   }
 
+  // Live Auto-Refresh Stats (Entries Count & Live Sync)
+  useEffect(() => {
+    const currentId = channelData?.channel?.id;
+    if (!currentId) return;
+
+    const statsInterval = setInterval(async () => {
+      try {
+        const telemetryRes = await api.getTelemetry(currentId, "24h");
+        if (telemetryRes.data) {
+          setStats((prev) => ({
+            ...prev,
+            entries: telemetryRes.data.length
+          }));
+        }
+      } catch {}
+    }, 4000);
+
+    return () => clearInterval(statsInterval);
+  }, [channelData?.channel?.id]);
+
   // API Key Handlers
   async function handleGenerateNewWriteKey() {
     if (!channelData?.channel?.id) return;

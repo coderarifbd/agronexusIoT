@@ -102,9 +102,15 @@ export function SingleFieldChart({
   });
 
   useEffect(() => {
-    if (channel?.id) {
-      loadFieldData();
-    }
+    if (!channel?.id) return;
+    loadFieldData();
+
+    // Live continuous sync timer (every 3 seconds) so graphs update non-stop
+    const interval = setInterval(() => {
+      loadFieldData(true);
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, [channel?.id, field?.field_key, chartOptions.results]);
 
   // Append new incoming WebSocket telemetry live
@@ -133,9 +139,9 @@ export function SingleFieldChart({
     }
   }, [latestTelemetry, channel?.id, field.field_key, chartOptions.dynamic, chartOptions.results]);
 
-  async function loadFieldData() {
+  async function loadFieldData(silent = false) {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await api.getTelemetry(channel.id, "24h");
       const records = res.data || [];
 
@@ -162,7 +168,7 @@ export function SingleFieldChart({
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }
 
