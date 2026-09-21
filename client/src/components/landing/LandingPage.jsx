@@ -168,12 +168,20 @@ export function LandingPage({ onGetStarted, onLogin, onNavigateToDashboard, onNa
                 Open Dashboard
               </button>
             ) : (
-              <button
-                onClick={onGetStarted}
-                className="px-5 py-2 rounded-full bg-[#f5c026] hover:bg-[#e6b31e] text-slate-950 font-bold text-xs sm:text-sm shadow-md transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-              >
-                Sign up
-              </button>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <button
+                  onClick={onLogin}
+                  className="px-3.5 py-1.5 rounded-full hover:bg-emerald-950/80 text-emerald-300 hover:text-white font-semibold text-xs sm:text-sm transition-colors cursor-pointer"
+                >
+                  Log In
+                </button>
+                <button
+                  onClick={onGetStarted}
+                  className="px-5 py-2 rounded-full bg-[#f5c026] hover:bg-[#e6b31e] text-slate-950 font-bold text-xs sm:text-sm shadow-md transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                >
+                  Sign up
+                </button>
+              </div>
             )}
 
             {/* Mobile Menu Button */}
