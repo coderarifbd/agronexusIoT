@@ -53,6 +53,7 @@ app.use("/api/channels", channelRoutes);
 app.use("/api/devices", deviceRoutes);
 app.use("/api/telemetry", telemetryRoutes);
 app.use("/api", telemetryRoutes);
+app.use("/", telemetryRoutes);
 app.use("/api/actuators", actuatorRoutes);
 app.use("/api/rules", ruleRoutes);
 app.use("/api/dashboards", dashboardRoutes);

@@ -60,13 +60,60 @@ export function SingleFieldChart({
     }
   }, [channel?.id, field?.field_key, chartOptions.results]);
 
+function extractFieldValue(obj, field, fieldIndex, channel) {
+  if (!obj || typeof obj !== "object") return undefined;
+
+  // 1. Exact field_key match (e.g. "field1")
+  if (obj[field?.field_key] !== undefined && obj[field?.field_key] !== null) {
+    return obj[field.field_key];
+  }
+
+  // 2. Standard field index match (e.g. "field1", "field2")
+  const idxKey = `field${fieldIndex + 1}`;
+  if (obj[idxKey] !== undefined && obj[idxKey] !== null) {
+    return obj[idxKey];
+  }
+
+  // 3. Match by field name (e.g. field named "TDS" -> obj["tds"])
+  const fName = (field?.name || "").toLowerCase().trim();
+  const chName = (channel?.name || "").toLowerCase().trim();
+
+  for (const [k, v] of Object.entries(obj)) {
+    const lk = k.toLowerCase().trim();
+    if (lk === fName || (fName && (lk.includes(fName) || fName.includes(lk)))) {
+      return v;
+    }
+  }
+
+  // 4. Match by channel name if channel name indicates sensor (e.g. channel named "TDS")
+  for (const [k, v] of Object.entries(obj)) {
+    const lk = k.toLowerCase().trim();
+    if (lk === chName || (chName && (lk.includes(chName) || chName.includes(lk)))) {
+      return v;
+    }
+  }
+
+  // 5. Fallback: if there is only 1 numeric property in obj, map to field 1
+  if (fieldIndex === 0) {
+    const numericPairs = Object.entries(obj).filter(([k, v]) => 
+      !["timestamp", "dateStr", "time", "_timestamp", "channel_id", "channel_number", "id", "device_id"].includes(k) &&
+      !isNaN(Number(v)) && v !== "" && v !== null
+    );
+    if (numericPairs.length === 1) {
+      return numericPairs[0][1];
+    }
+  }
+
+  return undefined;
+}
+
   // Append new incoming WebSocket telemetry live
   useEffect(() => {
     if (!chartOptions.dynamic) return;
 
     const stream = latestTelemetry?.[channel?.id];
     if (stream) {
-      const fieldVal = stream[field.field_key] ?? stream[`field${fieldIndex + 1}`];
+      const fieldVal = extractFieldValue(stream, field, fieldIndex, channel);
       if (fieldVal !== undefined && fieldVal !== null) {
         const parsed = Number(fieldVal);
         const pointVal = isNaN(parsed) ? 0 : parsed;
@@ -98,7 +145,7 @@ export function SingleFieldChart({
           valObj = typeof r.data_json === "string" ? JSON.parse(r.data_json) : r.data_json;
         } catch (e) {}
 
-        const raw = valObj[field.field_key] ?? valObj[`field${fieldIndex + 1}`] ?? 0;
+        const raw = extractFieldValue(valObj, field, fieldIndex, channel) ?? 0;
         const parsed = Number(raw);
         const val = isNaN(parsed) ? 0 : parsed;
 

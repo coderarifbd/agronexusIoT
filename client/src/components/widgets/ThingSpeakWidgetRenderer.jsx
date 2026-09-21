@@ -41,6 +41,27 @@ export function ThingSpeakWidgetRenderer({ widget, channel, currentValues = {}, 
       }
     }
 
+    // 5. Match by widget title or channel name (e.g. title "TDS" -> source["tds"])
+    if (widget.title) {
+      const lowerTitle = widget.title.toLowerCase().trim();
+      for (const [k, val] of Object.entries(source)) {
+        const lk = k.toLowerCase().trim();
+        if (lk === lowerTitle || lowerTitle.includes(lk) || lk.includes(lowerTitle)) {
+          const v = Number(val);
+          if (!isNaN(v)) return v;
+        }
+      }
+    }
+
+    // 6. If only 1 numeric property in source (besides metadata), return it
+    const numPairs = Object.entries(source).filter(([k, val]) =>
+      !["timestamp", "dateStr", "time", "_timestamp", "channel_id", "channel_number", "id", "device_id"].includes(k) &&
+      !isNaN(Number(val)) && val !== "" && val !== null
+    );
+    if (numPairs.length === 1) {
+      return Number(numPairs[0][1]);
+    }
+
     return null;
   }
 

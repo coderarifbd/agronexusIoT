@@ -8,6 +8,22 @@
       "destination": "/api/index.js"
     },
     {
+      "source": "/update(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/channels/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/channel/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/data(.*)",
+      "destination": "/api/index.js"
+    },
+    {
       "source": "/((?!.*\\.[\\w]+$).*)",
       "destination": "/index.html"
     }

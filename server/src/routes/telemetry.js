@@ -16,11 +16,61 @@ async function processAndStoreTelemetry(channel, device, rawData) {
   const payload = (rawData.data && typeof rawData.data === "object") ? { ...rawData, ...rawData.data } : rawData;
 
   for (const [k, v] of Object.entries(payload)) {
-    if (!["device_id", "device_id_code", "api_key", "secret", "timestamp", "created_at", "data"].includes(k)) {
+    if (!["device_id", "device_id_code", "api_key", "key", "write_api_key", "channel_id", "channel_number", "secret", "timestamp", "created_at", "data"].includes(k)) {
       if (typeof v === "number" || (typeof v === "string" && v.trim() !== "")) {
         sensorData[k] = isNaN(Number(v)) ? v : Number(v);
       }
     }
+  }
+
+  // Smart Field Auto-Mapping:
+  // If payload does not have standard field1, field2... but has custom sensor names (e.g. tds, temp, humidity),
+  // map them to the channel's fields so charts and widgets display them immediately!
+  try {
+    const channelFields = await db.all(
+      "SELECT * FROM channel_fields WHERE channel_id = $1 ORDER BY field_order ASC",
+      [channel.id]
+    );
+
+    const hasStandardField = Object.keys(sensorData).some((k) => /^field\d+$/i.test(k));
+    if (!hasStandardField && channelFields && channelFields.length > 0) {
+      const sensorKeys = Object.keys(sensorData);
+      let mapped = false;
+
+      // 1. Match by field name or key (e.g. sensor "tds" matches field named "TDS" or "Field Label 1")
+      sensorKeys.forEach((key) => {
+        const lowerKey = key.toLowerCase().trim();
+        const match = channelFields.find((f) => {
+          const fn = (f.name || "").toLowerCase().trim();
+          const fk = (f.field_key || "").toLowerCase().trim();
+          return fn === lowerKey || fk === lowerKey || fn.includes(lowerKey) || lowerKey.includes(fn);
+        });
+
+        if (match && sensorData[match.field_key] === undefined) {
+          sensorData[match.field_key] = sensorData[key];
+          mapped = true;
+        }
+      });
+
+      // 2. If no direct name match, map sequentially: 1st sensor -> field1, 2nd -> field2, etc.
+      if (!mapped) {
+        sensorKeys.forEach((key, idx) => {
+          if (channelFields[idx]) {
+            const targetKey = channelFields[idx].field_key || `field${idx + 1}`;
+            if (sensorData[targetKey] === undefined) {
+              sensorData[targetKey] = sensorData[key];
+            }
+          } else if (idx < 8) {
+            const fallbackKey = `field${idx + 1}`;
+            if (sensorData[fallbackKey] === undefined) {
+              sensorData[fallbackKey] = sensorData[key];
+            }
+          }
+        });
+      }
+    }
+  } catch (mapErr) {
+    console.warn("Smart field mapping note:", mapErr.message);
   }
 
   let processedData = await applySensorCalibration(channel.id, sensorData);
@@ -53,7 +103,7 @@ async function processAndStoreTelemetry(channel, device, rawData) {
 
 // 1. ThingSpeak GET /update endpoint (e.g. GET /update?api_key=KEY&field1=0)
 router.get("/update", async (req, res) => {
-  const apiKey = req.query.api_key;
+  const apiKey = req.query.api_key || req.query.key || req.query.write_api_key || req.headers["x-api-key"];
   if (!apiKey) {
     return res.status(400).send("0");
   }
@@ -74,7 +124,7 @@ router.get("/update", async (req, res) => {
 
 // 2. ThingSpeak POST /update endpoint
 router.post("/update", async (req, res) => {
-  const apiKey = req.body.api_key || req.query.api_key || req.headers["x-api-key"];
+  const apiKey = req.body.api_key || req.query.api_key || req.body.key || req.query.key || req.body.write_api_key || req.headers["x-api-key"];
   if (!apiKey) {
     return res.status(400).send("0");
   }
