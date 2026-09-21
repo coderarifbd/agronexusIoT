@@ -103,12 +103,26 @@ async function processAndStoreTelemetry(channel, device, rawData) {
 
 // 1. ThingSpeak GET /update endpoint (e.g. GET /update?api_key=KEY&field1=0)
 router.get("/update", async (req, res) => {
-  const apiKey = req.query.api_key || req.query.key || req.query.write_api_key || req.headers["x-api-key"];
-  if (!apiKey) {
-    return res.status(400).send("0");
+  const apiKey =
+    req.query.api_key ||
+    req.query.key ||
+    req.query.write_api_key ||
+    req.headers["x-api-key"] ||
+    req.headers["api_key"];
+
+  const channelIdNum = req.query.channel_id || req.query.channel_number;
+
+  let channel = null;
+  if (apiKey) {
+    channel = await db.get("SELECT * FROM channels WHERE api_write_key = $1", [apiKey]);
+  }
+  if (!channel && channelIdNum) {
+    channel = await db.get(
+      "SELECT * FROM channels WHERE channel_number = $1 OR id = $2",
+      [isNaN(Number(channelIdNum)) ? -1 : Number(channelIdNum), String(channelIdNum)]
+    );
   }
 
-  const channel = await db.get("SELECT * FROM channels WHERE api_write_key = $1", [apiKey]);
   if (!channel) {
     return res.status(404).send("0");
   }
@@ -124,22 +138,63 @@ router.get("/update", async (req, res) => {
 
 // 2. ThingSpeak POST /update endpoint
 router.post("/update", async (req, res) => {
-  const apiKey = req.body.api_key || req.query.api_key || req.body.key || req.query.key || req.body.write_api_key || req.headers["x-api-key"];
-  if (!apiKey) {
-    return res.status(400).send("0");
+  let bodyObj = req.body;
+
+  // Handle raw string body (JSON string or form-urlencoded string)
+  if (typeof bodyObj === "string") {
+    const trimmed = bodyObj.trim();
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+      try {
+        bodyObj = JSON.parse(trimmed);
+      } catch (e) {}
+    } else {
+      try {
+        bodyObj = Object.fromEntries(new URLSearchParams(trimmed));
+      } catch (e) {}
+    }
   }
 
-  const channel = await db.get("SELECT * FROM channels WHERE api_write_key = $1", [apiKey]);
+  if (!bodyObj || typeof bodyObj !== "object") {
+    bodyObj = {};
+  }
+
+  const payload = { ...req.query, ...bodyObj };
+
+  const apiKey =
+    payload.api_key ||
+    payload.key ||
+    payload.write_api_key ||
+    req.headers["x-api-key"] ||
+    req.headers["api_key"] ||
+    req.headers["authorization"]?.replace("Bearer ", "");
+
+  const channelIdNum = payload.channel_id || payload.channel_number;
+
+  let channel = null;
+  if (apiKey) {
+    channel = await db.get("SELECT * FROM channels WHERE api_write_key = $1", [apiKey]);
+  }
+
+  // Fallback: If not found by apiKey but channel_id is provided, look up by channel number
+  if (!channel && channelIdNum) {
+    channel = await db.get(
+      "SELECT * FROM channels WHERE channel_number = $1 OR id = $2",
+      [isNaN(Number(channelIdNum)) ? -1 : Number(channelIdNum), String(channelIdNum)]
+    );
+  }
+
   if (!channel) {
+    console.warn("⚠️ [Update Endpoint] Channel not found for payload:", payload);
     return res.status(404).send("0");
   }
 
   try {
-    const payload = { ...req.query, ...req.body };
     await processAndStoreTelemetry(channel, null, payload);
     const countRow = await db.get("SELECT COUNT(*) as count FROM telemetry_data WHERE channel_id = $1", [channel.id]);
-    return res.status(200).send(String(countRow?.count || 1));
+    const entryId = String(countRow?.count || 1);
+    return res.status(200).send(entryId);
   } catch (err) {
+    console.error("❌ [Update Endpoint Error]:", err);
     return res.status(500).send("0");
   }
 });

@@ -18,7 +18,9 @@ import simulatorRoutes from "./routes/simulator.js";
 const app = express();
 
 app.use(cors({ origin: "*", credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express.text({ type: ["text/*", "text/plain", "application/x-www-form-urlencoded"], limit: "10mb" }));
 
 // Lazy database init helper for serverless
 let dbInitialized = false;
