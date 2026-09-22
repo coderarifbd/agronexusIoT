@@ -187,7 +187,7 @@ router.get("/:id", authenticateToken, async (req, res) => {
     SELECT c.*, p.name as project_name, COALESCE(c.user_id, p.user_id) as owner_id
     FROM channels c
     LEFT JOIN projects p ON c.project_id = p.id
-    WHERE c.id = $1
+    WHERE c.id = $1 OR c.channel_number::text = $1
   `, [req.params.id]);
 
   if (!channel) {

@@ -521,6 +521,10 @@ router.get("/channel/:channelId/historical", async (req, res) => {
   const { range = "24h" } = req.query;
   const channelId = req.params.channelId;
 
+  // Resolve channel by either UUID or channel_number:
+  const channel = await getFastChannel(null, channelId);
+  const targetId = channel?.id || channelId;
+
   let intervalStr = "24 hours";
   if (range === "7d") intervalStr = "7 days";
   else if (range === "30d") intervalStr = "30 days";
@@ -532,9 +536,9 @@ router.get("/channel/:channelId/historical", async (req, res) => {
     FROM telemetry_data 
     WHERE channel_id = $1 AND timestamp >= NOW() - ($2::interval)
     ORDER BY timestamp ASC
-  `, [channelId, intervalStr]);
+  `, [targetId, intervalStr]);
 
-  res.json({ channelId, range, count: rows.length, data: rows });
+  res.json({ channelId, targetId, range, count: rows.length, data: rows });
 });
 
 // 9. Data Export (CSV & JSON)
@@ -542,12 +546,13 @@ router.get("/channel/:channelId/export", async (req, res) => {
   const { format = "json", range = "30d", timezone = "UTC" } = req.query;
   const channelId = req.params.channelId;
 
-  const channel = await db.get("SELECT * FROM channels WHERE id = $1", [channelId]);
-  const fields = await db.all("SELECT * FROM channel_fields WHERE channel_id = $1 ORDER BY field_order ASC", [channelId]);
+  const channel = await getFastChannel(null, channelId);
+  const targetId = channel?.id || channelId;
+  const fields = await getFastChannelFields(targetId);
 
   const rows = await db.all(
     "SELECT id, timestamp, data_json FROM telemetry_data WHERE channel_id = $1 ORDER BY timestamp ASC",
-    [channelId]
+    [targetId]
   );
 
   const flatData = rows.map((r, idx) => {
